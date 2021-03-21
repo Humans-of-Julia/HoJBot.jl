@@ -21,3 +21,7 @@ One-time setup for your dev environment:
 Testing with your own server:
 1. Define `HOJBOT_DISCORD_TOKEN` environment variable in your shell profile
 2. Start the bot using `script/run.sh` script
+
+Take a look at the code under `command` and `handler` folders for examples
+about how to build stateless commands and watch message traffic and place
+reactions on them.
