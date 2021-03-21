@@ -1,5 +1,15 @@
 module HoJBot
 
-# Write your package code here.
+export start_bot
 
-end
+using Discord
+using Dates
+using TimeZones
+
+const COMMAND_PREFIX = ","
+
+include("main.jl")
+include("command/tz.jl")
+include("handler/reaction.jl")
+
+end # module

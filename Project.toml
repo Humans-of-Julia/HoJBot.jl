@@ -1,7 +1,12 @@
 name = "HoJBot"
 uuid = "7918a2cc-0dd0-4d51-b3de-26cf4b7ed9a1"
-authors = ["Tom Kwong <tomkwong@fb.com> and contributors"]
+authors = ["Tom Kwong <tk3369@gmail.com> and contributors"]
 version = "0.1.0"
+
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+Discord = "fcbf000d-02fd-53f1-af91-d952191673d3"
+TimeZones = "f269a46b-ccf7-5d73-abea-4c690281aa53"
 
 [compat]
 julia = "1"
