@@ -4,9 +4,13 @@ This is the Discord bot for Humans of Julia community server.
 
 ## Features
 
-1. The "happy reactor": automatically react to your message with smiley when a message sounds happy.
+1. The _happy reactor_: automatically reacts to your message with a smiley when your message sounds happy. Similarly, there are also _excited_ and _disappointed_ reactors.
 
-2. Time zone command (`tz`): easily convert a date/time into multiple predefined timezones.
+2. The time zone command (`tz`): easily convert a date/time into multiple predefined timezones. This is perfect for setting up meeting time that works for our global community.
+
+Quick demo:
+
+![demo](images/demo.gif)
 
 ## Contributions
 
