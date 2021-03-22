@@ -8,6 +8,8 @@ This is the Discord bot for Humans of Julia community server.
 
 2. Time zone command (`tz`): easily convert a date/time into multiple predefined timezones.
 
+![demo](images/demo.gif)
+
 ## Contributions
 
 All HoJ members are invited to contribute to this project.
