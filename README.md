@@ -17,12 +17,18 @@ Quick demo:
 All HoJ members are invited to contribute to this project.
 Here's how to get started.
 
-One-time setup for your dev environment:
+Set up Discord dev environment:
 1. [Create a new application](https://discord.com/developers/applications) using your Discord account
 2. [Create a test Discord server](https://support.discord.com/hc/en-us/articles/204849977-How-do-I-create-a-server-) for your own local testing
 3. [Invite your bot](https://discord.com/developers/docs/topics/oauth2#bot-authorization-flow) to your own Discord server. Make sure that you use the right `client_id` and `permissions` values in the URL.
 
-Testing with your own server:
+Get the HoJBot code:
+1. Clone this repo
+2. Start a julia REPL in the directory with `julia --project=.`
+3. Instantiate the project to download dependencies with `] instantiate`
+4. Exit julia REPL
+
+Testing:
 1. Locate your discord bot token from the Bot screen
 2. Define `HOJBOT_DISCORD_TOKEN` environment variable in your shell profile.
 3. Start the bot using `script/run.sh` script
