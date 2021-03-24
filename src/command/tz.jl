@@ -13,7 +13,7 @@ DATE_TIME_PATTERNS = (
 function time_zone_commander(c::Client, m::Message)
     # @info "time_zone_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
-    startswith(m.content, COMMAND_PREFIX * "tz ") || return
+    startswith(m.content, COMMAND_PREFIX * "tz") || return
     regex = Regex(COMMAND_PREFIX * raw"tz (help|convert|aliases) *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] == "help"
