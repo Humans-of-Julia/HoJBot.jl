@@ -9,6 +9,7 @@ Discord = "fcbf000d-02fd-53f1-af91-d952191673d3"
 TimeZones = "f269a46b-ccf7-5d73-abea-4c690281aa53"
 
 [compat]
+TimeZones = "1.5"
 julia = "1"
 
 [extras]
