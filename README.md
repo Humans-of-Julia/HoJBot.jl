@@ -23,12 +23,14 @@ Set up Discord dev environment:
 3. [Invite your bot](https://discord.com/developers/docs/topics/oauth2#bot-authorization-flow) to your own Discord server. Make sure that you use the right `client_id` and `permissions` values in the URL.
 
 Get the HoJBot code:
+
 1. Clone this repo
 2. Start a julia REPL in the directory with `julia --project=.`
 3. Instantiate the project to download dependencies with `] instantiate`
 4. Exit julia REPL
 
 Testing:
+
 1. Locate your discord bot token from the Bot screen
 2. Define `HOJBOT_DISCORD_TOKEN` environment variable in your shell profile.
 3. Start the bot using `script/run.sh` script
