@@ -21,9 +21,13 @@ Here's how to get started.
 
 Set up Discord dev environment:
 
-1. [Create a new application](https://discord.com/developers/applications) using your Discord account
-2. [Create a test Discord server](https://support.discord.com/hc/en-us/articles/204849977-How-do-I-create-a-server-) for your own local testing
-3. [Invite your bot](https://discord.com/developers/docs/topics/oauth2#bot-authorization-flow) to your own Discord server. Make sure that you use the right `client_id` and `permissions` values in the URL.
+1. [Create a new application](https://discord.com/developers/applications) using your Discord account.
+    * See [Creating a Bot Account](https://discordpy.readthedocs.io/en/latest/discord.html#creating-a-bot-account) for specific info.
+    * No need to make the bot public if only for testing purposes.
+2. [Create a test Discord server](https://support.discord.com/hc/en-us/articles/204849977-How-do-I-create-a-server-) for your own local testing.
+3. [Invite your bot](https://discord.com/developers/docs/topics/oauth2#bot-authorization-flow) to your own Discord server.
+    * Follow the step 7 in [Creating a Bot Account](https://discordpy.readthedocs.io/en/latest/discord.html#creating-a-bot-account) to access the url to invite the bot to your test server.
+    * Make sure that you use the right `client_id` and `permissions` values for generating the invite URL.
 
 Get the HoJBot code:
 
