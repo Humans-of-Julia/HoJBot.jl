@@ -18,6 +18,7 @@ All HoJ members are invited to contribute to this project.
 Here's how to get started.
 
 Set up Discord dev environment:
+
 1. [Create a new application](https://discord.com/developers/applications) using your Discord account
 2. [Create a test Discord server](https://support.discord.com/hc/en-us/articles/204849977-How-do-I-create-a-server-) for your own local testing
 3. [Invite your bot](https://discord.com/developers/docs/topics/oauth2#bot-authorization-flow) to your own Discord server. Make sure that you use the right `client_id` and `permissions` values in the URL.
