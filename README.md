@@ -10,7 +10,7 @@ This is the Discord bot for Humans of Julia community server.
 Quick demo:
 ![tz demo](images/demo.gif)
 
-3. The julia command (`j`): currently, only help is implemented, returning the docstring of a given julia object.
+3. The julia command (`j`): currently, only `j?<name>` or, alternatively, `j doc <name>` is implemented, returning the docstring for `<name>`.
 Quick demo:
 ![j demo](images/j_demo.gif)
 
