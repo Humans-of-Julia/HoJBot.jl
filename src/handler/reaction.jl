@@ -42,7 +42,7 @@ end
 struct ExcitedReactor <: AbstractReactor end
 
 function reactions(::ExcitedReactor, m::Message)
-    words = ["excited", "fantastic", "fabulous", "wonderful", "looking forward to", "love", "learn", "julia", "saved me"]
+    words = ["excited", "fantastic", "fabulous", "wonderful", "looking forward to", "love", "learn", "julia", "saved me", "happy"]
     if any(occursin.(words, m.content))
         return ['🤩']
     end
