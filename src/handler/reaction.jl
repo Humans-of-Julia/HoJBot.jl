@@ -32,7 +32,7 @@ end
 struct DisappointedReactor <: AbstractReactor end
 
 function reactions(::DisappointedReactor, m::Message)
-    words = ["disappointed", "unhappy"]
+    words = ["disappointed", "unhappy", "shit", "damn", "bad", "hard"]
     if any(occursin.(words, m.content))
         return ['😞']
     end
