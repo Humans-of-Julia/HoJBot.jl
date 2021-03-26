@@ -14,4 +14,5 @@ end
 
 function init_commands!(client::Client)
     add_command!(client, :tz, time_zone_commander)
+    add_command!(client, :j, julia_commander)
 end
