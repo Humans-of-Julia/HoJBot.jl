@@ -22,7 +22,7 @@ const NO_REACTION = Char[]
 struct HappyReactor <: AbstractReactor end
 
 function reactions(::HappyReactor, m::Message)
-    words = ["happy", "nice", "great"]
+    words = ["happy", "nice", "great", "awesome", "cheers", "yay", "yayy", "congratulations", "it helped", "appriciate", "noice", "thanks"]
     if any(occursin.(words, m.content))
         return ['😄']
     end
@@ -42,7 +42,7 @@ end
 struct ExcitedReactor <: AbstractReactor end
 
 function reactions(::ExcitedReactor, m::Message)
-    words = ["excited", "fantastic", "fabulous", "wonderful"]
+    words = ["excited", "fantastic", "fabulous", "wonderful", "looking forward to", "love", "learn", "julia", "saved me"]
     if any(occursin.(words, m.content))
         return ['🤩']
     end
