@@ -41,10 +41,11 @@ function handle_julia_help_commander(c::Client, m::Message, s::AbstractString)
     else
         try
             name = split(s,r" |\)")[1]
-            doc = eval(Meta.parse("Docs.@doc("*name*")"))
-            reply(c, m, """
-                $doc
-                """)
+            doc = string(eval(Meta.parse("Docs.@doc("*name*")")))
+            for m in eachmatch(r"\[([^ ]*)\]\(@ref\)",doc)
+                doc = replace(doc, m.match => "`"*m.captures[1]*"`", count = 1)
+            end
+            reply(c, m, doc)
         catch ex
             @show ex
             reply(c, m, "Sorry, I don't understand the request")
