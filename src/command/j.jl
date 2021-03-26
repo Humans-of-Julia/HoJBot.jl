@@ -42,6 +42,16 @@ function handle_julia_help_commander(c::Client, m::Message, s::AbstractString)
         try
             name = split(s,r" |\)")[1]
             doc = string(eval(Meta.parse("Docs.@doc("*name*")")))
+            doc = replace(doc, r"\n\n+" => "\n")
+            doc = replace(doc, "!!! note\n" => "\n__Note__\n")
+            for m in eachmatch(r"(^|\n)(#+ )(.*)\n",doc)
+                if length(m.captures[2]) == 2
+                    doc = replace(doc, m.match => m.captures[1]*"\n**"*m.captures[3]*"**\n"*"≡"^(length(m.captures[3])), count = 1)
+                else
+                    doc = replace(doc, m.match => m.captures[1]*"\n*"*m.captures[3]*"*\n"*"≡"^(length(m.captures[3])), count = 1)
+                end
+            end
+            doc = replace(doc, r"(```.+)\n" => "```julia\n")
             for m in eachmatch(r"\[([^ ]*)\]\(@ref\)",doc)
                 doc = replace(doc, m.match => "`"*m.captures[1]*"`", count = 1)
             end
