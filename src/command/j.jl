@@ -34,31 +34,42 @@ function help_julia_commander(c::Client, m::Message)
     return nothing
 end
 
-function handle_julia_help_commander(c::Client, m::Message, s::AbstractString)
+function handle_julia_help_commander(c::Client, m::Message, name::AbstractString)
     # @info "julia_help_commander called"
-    if any((' ', '(', ')') .∈ s)
-        reply(c, m, "Sorry, no space or parenthesis allowed in the help query")
+    if ';' ∈ name
+        reply(c, m, "Sorry, no semicolon allowed in the help query")
     else
         try
-            name = split(s,r" |\)")[1]
             doc = string(eval(Meta.parse("Docs.@doc("*name*")")))
-            doc = replace(doc, r"\n\n+" => "\n")
-            doc = replace(doc, "!!! note\n" => "\n__Note__\n")
-            for m in eachmatch(r"(^|\n)(#+ )(.*)\n",doc)
-                if length(m.captures[2]) == 2
-                    doc = replace(doc, m.match => m.captures[1]*"\n**"*m.captures[3]*"**\n"*"≡"^(length(m.captures[3])), count = 1)
+            doc = replace(doc, r"\n\n\n+" => "\n\n")
+            for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n",doc)
+                if m.captures[2] == "# "
+                    doc = replace(doc, m.match => m.captures[1]*"*"*m.captures[3]*"*\n"*"≡"^(length(m.captures[3])), count = 1)
+                elseif m.captures[2] == "!!! "
+                    doc = replace(doc, m.match => m.captures[1]*"__"*m.captures[3]*"__\n", count = 1)
                 else
-                    doc = replace(doc, m.match => m.captures[1]*"\n*"*m.captures[3]*"*\n"*"≡"^(length(m.captures[3])), count = 1)
+                    doc = replace(doc, m.match => m.captures[1]*"**"*m.captures[3]*"**\n"*"≡"^(length(m.captures[3])), count = 1)
                 end
             end
             doc = replace(doc, r"(```.+)\n" => "```julia\n")
+            doc = replace(doc, "```\n" => "```")
             for m in eachmatch(r"\[([^ ]*)\]\(@ref\)",doc)
                 doc = replace(doc, m.match => "`"*m.captures[1]*"`", count = 1)
             end
-            reply(c, m, doc)
+            docs = split_message(doc)
+            i = 1
+            while i ≤ length(docs)
+                if length(prod(docs[i:end])) ≤ 2000
+                    reply(c, m, prod(docs[i:end]))
+                    i = length(docs) + 1
+                else
+                    reply(c, m, docs[i])
+                    i += 1
+                end             
+            end
         catch ex
             @show ex
-            reply(c, m, "Sorry, I don't understand the request")
+            reply(c, m, "Sorry, it didn't work.")
         end
     end
     return nothing
