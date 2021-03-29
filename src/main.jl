@@ -48,8 +48,15 @@ function init_commands!(client::Client, commands)
     end
 end
 
-handler(c::Client, e::MessageCreate, hand) = handler(c, e, Val(hand))
-commander(c::Client, m::Message, service) = commander(c, m, Val(service))
+handler(c::Client, e::MessageCreate, hand) = begin
+    @info "handler" c e hand
+    handler(c, e, Val(hand))
+end
+commander(c::Client, m::Message, service) =
+begin
+    @info "commander" c m service
+    commander(c, m, Val(service))
+end
 help_commander(c::Client, m::Message, service) = help_commander(c, m, Val(service))
 
 function get_opt(username, discriminator)
