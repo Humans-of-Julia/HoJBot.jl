@@ -23,27 +23,28 @@ const opt_services_list = Set([
     :reaction,
 ])
 
-function start_bot()
+function start_bot(;
+    commands = active_commands,
+    handlers = handlers_list,
+    )
     global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
         presence = (game = (name = "HoJ", type = AT_GAME),),
         prefix = COMMAND_PREFIX)
-    init_handlers!(client)
-    init_commands!(client)
+    init_handlers!(client, handlers)
+    init_commands!(client, commands)
     open(client)
     wait(client)
 end
 
-function init_handlers!(client::Client)
-    for handler in handlers_list
-        handlers_list[handler] && add_handler!(client, MessageCreate, handler)
+function init_handlers!(client::Client, handlers)
+    for (handler, active) in handlers
+        active && add_handler!(client, MessageCreate, handler)
     end
 end
 
-function init_commands!(client::Client)
-    for command in active_commands
-        if active_commands(command)
-        add_command!(client, command, (c, m) -> commander(c, m, commands_names[command]))
-        end
+function init_commands!(client::Client, commands)
+    for (com, active) in commands
+        active && add_command!(client, com, (c, m) -> commander(c, m, commands_names[com]))
     end
 end
 
