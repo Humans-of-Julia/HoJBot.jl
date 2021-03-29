@@ -17,7 +17,7 @@ function commander(c::Client, m::Message, ::Val{:time_zone})
     regex = Regex(COMMAND_PREFIX * raw"tz (help|convert|aliases) *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] == "help"
-        help_commander(c, m, ::Val{:time_zone})
+        help_commander(c, m, Val(:time_zone))
         return
     elseif matches.captures[1] == "aliases"
         help_time_zone_aliases(c, m)
@@ -28,7 +28,7 @@ function commander(c::Client, m::Message, ::Val{:time_zone})
     end
 end
 
-function help_commander(c::Client, m::Message, ::Val(:time_zone))
+function help_commander(c::Client, m::Message, ::Val{:time_zone})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
         How to use the `tz` command:
