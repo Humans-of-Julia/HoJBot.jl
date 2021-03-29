@@ -21,8 +21,10 @@ const opt_services_list = Set([
     :reaction,
 ])
 
-const help_message =
-"""
+function help_message()
+    commands = map(c -> string(c) * "\n", commands_list)
+    opt = map(c -> string(c) * "\n", filter(c -> commands_list[c], opt_services_list))
+    str = """
     HoJBot accepts the following commands:
     ```
     $commands
@@ -31,7 +33,9 @@ const help_message =
     ```
     $opt
     ```
-"""
+    """
+    return str
+end
 
 function start_bot(;
     commands = active_commands,
@@ -42,7 +46,7 @@ function start_bot(;
         prefix = COMMAND_PREFIX)
     init_handlers!(client, handlers)
     init_commands!(client, commands)
-    add_help!(c; help = help_message)
+    add_help!(c; help = help_message())
     open(client)
     wait(client)
 end
