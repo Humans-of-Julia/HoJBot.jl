@@ -25,8 +25,8 @@ function help_message()
     act_commands = collect(keys(filter(c -> c.second, active_commands)))
     names = collect(values(filter(c -> active_commands[c.first], commands_names)))
 
-    commands = map(c -> string(c) * "\n", act_commands)
-    opt = map(c -> string(c) * "\n", filter(c -> c ∈ names, opt_services_list))
+    commands = mapreduce(c -> string(c) * "\n", *, act_commands)
+    opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, opt_services_list))
     str = """
     HoJBot accepts the following commands:
     ```
