@@ -71,7 +71,7 @@ function julia_commander(c::Client, m::Message)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_commander(c, m, Val(:julia))
     elseif matches.captures[1] in ("?", " doc")
-        handle_help_commander(c, m, matches.captures[2], Val(:julia))
+        handle_julia_help_commander(c, m, matches.captures[2])
     else
         reply(c, m, "Sorry, I don't understand the request; use `j help` for help")
     end

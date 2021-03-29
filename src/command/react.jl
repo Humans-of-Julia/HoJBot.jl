@@ -7,7 +7,7 @@ function reaction_commander(c::Client, m::Message)
     matches = match(regex, m.content)
 
     if matches === nothing || matches.captures[1] ∈ (" help", nothing)
-        help_commander(c, m, Val(:game_master))
+        help_commander(c, m, Val(:reaction))
     elseif matches.captures[1] == " in"
         @info "opt-in was required" m.content m.author.username m.author.discriminator
         opt_in(c, m, :reaction)
@@ -20,9 +20,9 @@ function reaction_commander(c::Client, m::Message)
     return nothing
 end
 
-function help_commander(c::Client, m::Message, ::Val{:game_master})
+function help_commander(c::Client, m::Message, ::Val{:reaction})
     reply(c, m, """
-        How to play with the `gm` command:
+        How to opt-in/out of the `reaction` bot:
         ```
         react help
         react in
