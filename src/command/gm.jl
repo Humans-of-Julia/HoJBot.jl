@@ -43,7 +43,7 @@ end
 function opt_out(c::Client, m::Message)
     reply(c, m,
         """
-        The `opt_in` function is being implemented. Please try again once it is released.
+        The `opt_out` function is being implemented. Please try again once it is released.
         """
     )
 end
