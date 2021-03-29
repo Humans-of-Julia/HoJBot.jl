@@ -16,10 +16,10 @@ const handlers_list = LittleDict([
     :reaction => true,
 ])
 
-const opt_services_list = Set([
+const opt_services_list = [
     :game_master,
     :reaction,
-])
+]
 
 function help_message()
     commands = map(c -> string(c) * "\n", keys(filter(c -> c.second, active_commands)))
