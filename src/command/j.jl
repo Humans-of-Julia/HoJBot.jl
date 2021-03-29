@@ -26,7 +26,7 @@ function split_message_fixed(text::AbstractString, chunk_limit::Int=2000; extrar
 
     while !isempty(text)
         mranges = vcat(findall.(union(STYLES,extraregex),Ref(text))...)
-        
+
         stop = maximum(filter(i -> length(text[1:i]) ≤ chunk_limit, filterranges(mranges)))
 
         # give up if first chunk cannot be broken down
@@ -62,23 +62,23 @@ function parse_doc(doc::AbstractString)
     return doc
 end
 
-function julia_commander(c::Client, m::Message)
+function commander(c::Client, m::Message, ::Val{:julia})
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j") || return
     regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
-        help_julia_commander(c, m)
+        help_commander(c, m, Val(:julia))
     elseif matches.captures[1] in ("?", " doc")
-        handle_julia_help_commander(c, m, matches.captures[2])
+        handle_help_commander(c, m, matches.captures[2], Val(:julia))
     else
         reply(c, m, "Sorry, I don't understand the request; use `j help` for help")
     end
     return nothing
 end
 
-function help_julia_commander(c::Client, m::Message)
+function help_commander(c::Client, m::Message, ::Val{:julia})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
         For the moment, only "doc" is accept, for showing the docstring.
@@ -95,7 +95,7 @@ function help_julia_commander(c::Client, m::Message)
     return nothing
 end
 
-function handle_julia_help_commander(c::Client, m::Message, name::AbstractString)
+function handle_julia_help_commander(c::Client, m::Message, name)
     # @info "julia_help_commander called"
     if ';' ∈ name
         reply(c, m, "Sorry, no semicolon allowed in the help query")
@@ -114,4 +114,3 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
     end
     return nothing
 end
-

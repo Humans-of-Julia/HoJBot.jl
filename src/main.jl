@@ -17,3 +17,45 @@ function init_commands!(client::Client)
     add_command!(client, :j, julia_commander)
     add_command!(client, :gm, game_master_commander)
 end
+
+# Purely informative atm
+const opt_services_list = Set([
+    :game_master,
+    :reaction,
+])
+
+commander(c::Client, m::Message, service) = commander(c, m, Val(service))
+help_commander(c::Client, m::Message, service) = help_commander(c, m, Val(service))
+
+function get_opt(username, discriminator)
+    user = username * "_" * discriminator
+    path = joinpath(pwd(), "data", "opt", user)
+    !isfile(path) && write(path, "{}")
+    return JSON.parsefile(path; dicttype = LittleDict)
+end
+
+function get_opt(username, discriminator, service)
+    return get!(get_opt(username, discriminator), service, false)
+end
+
+function opt_in(c::Client, m::Message, service)
+    username = m.author.username
+    discriminator = m.author.discriminator
+    get_opt(username, discriminator, service) = true
+    reply(c, m,
+        """
+        Thanks @$username#$discriminator for joining our $service service!
+        """
+    )
+end
+
+function opt_out(c::Client, m::Message, service)
+    username = m.author.username
+    discriminator = m.author.discriminator
+    get_opt(username, discriminator, service) = false
+    reply(c, m,
+        """
+        It is sad that you're leaving our $service service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
+        """
+    )
+end

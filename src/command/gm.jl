@@ -1,4 +1,4 @@
-function game_master_commander(c::Client, m::Message)
+function commander(c::Client, m::Message, ::Val{:game_master})
     @info "game_master_commander called"
     startswith(m.content, COMMAND_PREFIX * "gm") || return
 
@@ -7,20 +7,20 @@ function game_master_commander(c::Client, m::Message)
     matches = match(regex, m.content)
 
     if matches === nothing || matches.captures[1] ∈ (" help", nothing)
-        help_game_master_commander(c, m)
+        help_commander(c, m, Val(:game_master))
     elseif matches.captures[1] == " in"
         @info "opt-in was required" m.content m.author.username m.author.discriminator
-        opt_in(c, m)
+        opt_in(c, m, Val(:game_master))
     elseif matches.captures[1] == " out"
         @info "opt-out was required" m.content m.author.username m.author.discriminator
-        opt_out(c, m)
+        opt_out(c, m, Val(:game_master))
     else
         reply(c, m, "Sorry, are you playing me? Please check out `gm help`")
     end
     return nothing
 end
 
-function help_game_master_commander(c::Client, m::Message)
+function help_commander(c::Client, m::Message, ::Val{:game_master})
     reply(c, m, """
         How to play with the `gm` command:
         ```
@@ -32,7 +32,7 @@ function help_game_master_commander(c::Client, m::Message)
         """)
 end
 
-function opt_in(c::Client, m::Message)
+function opt_in(c::Client, m::Message, ::Val{:game_master})
     reply(c, m,
         """
         The `opt_in` function is being implemented. Please try again once it is released.
@@ -40,10 +40,17 @@ function opt_in(c::Client, m::Message)
     )
 end
 
-function opt_out(c::Client, m::Message)
+function opt_out(c::Client, m::Message, ::Val{:game_master})
     reply(c, m,
         """
         The `opt_out` function is being implemented. Please try again once it is released.
         """
     )
+end
+
+function get_opt(username, discriminator, ::Val{:game_master})
+    user = username * "_" * discriminator
+    path = joinpath(pwd(), "data", "opt", user)
+    !isfile(path) && write(path, "{}")
+    return JSON.parsefile(path; dicttype = LittleDict)
 end
