@@ -10,9 +10,10 @@ function game_master_commander(c::Client, m::Message)
         help_game_master_commander(c, m)
     elseif matches.captures[1] == " in"
         @info "opt-in was required" m.content m.author.username m.author.discriminator
-
+        opt_in(c, m)
     elseif matches.captures[1] == " out"
         @info "opt-out was required" m.content m.author.username m.author.discriminator
+        opt_out(c, m)
     else
         reply(c, m, "Sorry, are you playing me? Please check out `gm help`")
     end
