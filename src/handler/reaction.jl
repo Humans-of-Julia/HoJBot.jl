@@ -59,7 +59,7 @@ const REACTORS = AbstractReactor[
     ExcitedReactor(),
 ]
 
-function react_handler(c::Client, e::MessageCreate)
+function handler(c::Client, e::MessageCreate, ::Val{:reaction})
     # @info "react_handler called"
     # @info "Received message" e.message.channel_id e.message.id e.message.content
     username = e.message.author.username

@@ -37,8 +37,8 @@ function start_bot(;
 end
 
 function init_handlers!(client::Client, handlers)
-    for (handler, active) in handlers
-        active && add_handler!(client, MessageCreate, handler)
+    for (hand, active) in handlers
+        active && add_handler!(client, MessageCreate, (c, e) -> handler(c, e, hand))
     end
 end
 
@@ -48,6 +48,7 @@ function init_commands!(client::Client, commands)
     end
 end
 
+handler(c::Client, e::MessageCreate, hand) = handler(c, e, Val(hand))
 commander(c::Client, m::Message, service) = commander(c, m, Val(service))
 help_commander(c::Client, m::Message, service) = help_commander(c, m, Val(service))
 
