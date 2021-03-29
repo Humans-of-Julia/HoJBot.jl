@@ -28,6 +28,7 @@ function help_message()
     commands = mapreduce(c -> string(c) * "\n", *, act_commands)
     opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, opt_services_list))
     str = """
+    ```
     HoJBot accepts the following commands:
     ```
     $commands
