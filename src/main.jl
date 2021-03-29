@@ -22,8 +22,10 @@ const opt_services_list = Set([
 ])
 
 function help_message()
-    commands = map(c -> string(c) * "\n", filter(c -> active_commands[c], active_commands))
-    opt = map(c -> string(c) * "\n", filter(c -> active_commands[c], opt_services_list))
+    commands = map(c -> string(c) * "\n", filter(
+        (c, active) -> active_commands[c], active_commands))
+    opt = map(c -> string(c) * "\n", filter(
+        (c, active) -> active_commands[c], opt_services_list))
     str = """
     HoJBot accepts the following commands:
     ```
