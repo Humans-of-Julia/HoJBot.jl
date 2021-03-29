@@ -62,7 +62,7 @@ function parse_doc(doc::AbstractString)
     return doc
 end
 
-function commander(c::Client, m::Message, ::Val{:julia})
+function julia_commander(c::Client, m::Message)
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j") || return

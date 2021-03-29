@@ -1,4 +1,4 @@
-function commander(c::Client, m::Message, ::Val{:game_master})
+function game_master_commander(c::Client, m::Message)
     @info "game_master_commander called"
     startswith(m.content, COMMAND_PREFIX * "gm") || return
 
@@ -46,11 +46,4 @@ function opt_out(c::Client, m::Message, ::Val{:game_master})
         The `opt_out` function is being implemented. Please try again once it is released.
         """
     )
-end
-
-function get_opt(username, discriminator, ::Val{:game_master})
-    user = username * "_" * discriminator
-    path = joinpath(pwd(), "data", "opt", user)
-    !isfile(path) && write(path, "{}")
-    return JSON.parsefile(path; dicttype = LittleDict)
 end

@@ -10,7 +10,7 @@ DATE_TIME_PATTERNS = (
     dateformat"yyyy-mm-dd HH:MMp", # AM/PM
 )
 
-function commander(c::Client, m::Message, ::Val{:time_zone})
+function time_zone_commander(c::Client, m::Message)
     # @info "time_zone_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "tz") || return
