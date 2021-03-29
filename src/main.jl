@@ -49,36 +49,48 @@ end
 function opt_in(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    if get_opt!(username, discriminator, service)
+    if service ∉ opt_services_list
         reply(c, m,
-        """
-        Oh, @$username#$discriminator, you already suscribed to the $service service!
-        """
-    )
+            """
+            Oh, @$username#$discriminator, the $(string(service)) service either does not exist or accept opt-in/opt-out requests!
+            """
+        )
+    elseif get_opt!(username, discriminator, service)
+        reply(c, m,
+            """
+            Oh, @$username#$discriminator, you already suscribed to the $(string(service)) service!
+            """
+        )
     else
         set_opt!(username, discriminator, service, true)
         reply(c, m,
-        """
-        Thanks @$username#$discriminator for joining our $service service!
-        """
-    )
+            """
+            Thanks @$username#$discriminator for joining our $(string(service)) service!
+            """
+        )
     end
 end
 
 function opt_out(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    if get_opt!(username, discriminator, service)
+    if service ∉ opt_services_list
         reply(c, m,
             """
-            Oh, @$username#$discriminator, you haven't suscribed to the $service service!
+            Oh, @$username#$discriminator, the $(string(service)) service either does not exist or accept opt-in/opt-out requests!
+            """
+        )
+    elseif get_opt!(username, discriminator, service)
+        reply(c, m,
+            """
+            Oh, @$username#$discriminator, you haven't suscribed to the $(string(service)) service!
             """
         )
     else
         set_opt!(username, discriminator, service, false)
         reply(c, m,
             """
-            It is sad that you're leaving our $service service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
+            It is sad that you're leaving our $(string(service)) service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
             """
         )
     end
