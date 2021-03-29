@@ -35,12 +35,12 @@ function get_opt(username, discriminator)
 end
 
 function get_opt!(username, discriminator, service)
-    return get!(get_opt(username, discriminator), service, false)
+    return get!(get_opt(username, discriminator), string(service), false)
 end
 
 function set_opt!(username, discriminator, service, value)
     opt = get_opt(username, discriminator)
-    opt[service] = value
+    opt[string(service)] = value
     user = username * "_" * discriminator
     path = joinpath(pwd(), "data", "opt", user)
     write(path, json(opt))
