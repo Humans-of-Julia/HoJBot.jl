@@ -34,28 +34,52 @@ function get_opt(username, discriminator)
     return JSON.parsefile(path; dicttype = LittleDict)
 end
 
-function get_opt(username, discriminator, service)
+function get_opt!(username, discriminator, service)
     return get!(get_opt(username, discriminator), service, false)
+end
+
+function set_opt!(username, discriminator, service, value)
+    opt = get_opt(username, discriminator)
+    opt[service] = value
+    user = username * "_" * discriminator
+    path = joinpath(pwd(), "data", "opt", user)
+    write(path, json(opt))
 end
 
 function opt_in(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    get_opt(username, discriminator, service) = true
-    reply(c, m,
+    if get_opt!(username, discriminator, service)
+        reply(c, m,
+        """
+        Oh, @$username#$discriminator, you already suscribed to the $service service!
+        """
+    )
+    else
+        set_opt!(username, discriminator, service, true)
+        reply(c, m,
         """
         Thanks @$username#$discriminator for joining our $service service!
         """
     )
+    end
 end
 
 function opt_out(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    get_opt(username, discriminator, service) = false
-    reply(c, m,
-        """
-        It is sad that you're leaving our $service service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
-        """
-    )
+    if get_opt!(username, discriminator, service)
+        reply(c, m,
+            """
+            Oh, @$username#$discriminator, you haven't suscribed to the $service service!
+            """
+        )
+    else
+        set_opt!(username, discriminator, service, false)
+        reply(c, m,
+            """
+            It is sad that you're leaving our $service service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
+            """
+        )
+    end
 end
