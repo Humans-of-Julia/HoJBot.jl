@@ -1,6 +1,5 @@
 const active_commands = LittleDict([
     :gm => false,
-    :help => true,
     :j => true,
     :react => true,
     :tz => true,
@@ -8,7 +7,6 @@ const active_commands = LittleDict([
 
 const commands_names = LittleDict([
     :gm => :game_master,
-    :help => :global_help,
     :j => :julia_doc,
     :react => :reaction,
     :tz => :time_zone
@@ -23,6 +21,18 @@ const opt_services_list = Set([
     :reaction,
 ])
 
+const help_message =
+"""
+    HoJBot accepts the following commands:
+    ```
+    $commands
+    ```
+    The following services are opt-in. Please check the related help command (`service help` for any `service` below).
+    ```
+    $opt
+    ```
+"""
+
 function start_bot(;
     commands = active_commands,
     handlers = handlers_list,
@@ -32,6 +42,7 @@ function start_bot(;
         prefix = COMMAND_PREFIX)
     init_handlers!(client, handlers)
     init_commands!(client, commands)
+    add_help!(c; help = help_message)
     open(client)
     wait(client)
 end
