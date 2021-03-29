@@ -6,11 +6,11 @@ function game_master_commander(c::Client, m::Message)
 
     matches = match(regex, m.content)
 
-    if matches === nothing || matches.captures[1] === "help"
+    if matches === nothing || matches.captures[1] === " help"
         help_game_master_commander(c, m)
-    elseif matches.captures[1] == "in"
+    elseif matches.captures[1] == " in"
         @info "opt-in was required" m.content m.author.username m.author.discriminator
-    elseif matches.captures[1] == "out"
+    elseif matches.captures[1] == " out"
         @info "opt-out was required" m.content m.author.username m.author.discriminator
     else
         reply(c, m, "Sorry, are you playing me? Please check out `gm help`")
