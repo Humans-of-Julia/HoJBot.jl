@@ -43,7 +43,7 @@ function split_message_fixed(text::AbstractString, chunk_limit::Int=2000; extrar
     return chunks
 end
 
-function parse_doc!(doc::AbstractString)
+function parse_doc(doc::AbstractString)
     doc = replace(doc, r"\n\n\n+" => "\n\n")
     for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n",doc)
         if m.captures[2] == "# "
@@ -102,7 +102,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
     else
         try
             doc = string(eval(Meta.parse("Docs.@doc("*name*")")))
-            doc = parse_doc!(doc)
+            doc = parse_doc(doc)
             docs = split_message_fixed(doc, extraregex = [r"\n≡.+\n", r"n-.+\n"])
             for doc_chunck in docs
                 reply(c, m, doc_chunck)
