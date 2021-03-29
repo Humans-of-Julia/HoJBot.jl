@@ -11,6 +11,7 @@ const COMMAND_PREFIX = ","
 include("main.jl")
 include("command/tz.jl")
 include("command/j.jl")
+include("command/src.jl")
 include("handler/reaction.jl")
 
 end # module
