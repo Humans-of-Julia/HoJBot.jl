@@ -1,0 +1,33 @@
+function reaction_commander(c::Client, m::Message)
+    @info "reaction_commander called"
+    startswith(m.content, COMMAND_PREFIX * "react") || return
+
+    regex = Regex(COMMAND_PREFIX * raw"gm( help| in| out)? *(.*)$")
+
+    matches = match(regex, m.content)
+
+    if matches === nothing || matches.captures[1] ∈ (" help", nothing)
+        help_commander(c, m, Val(:game_master))
+    elseif matches.captures[1] == " in"
+        @info "opt-in was required" m.content m.author.username m.author.discriminator
+        opt_in(c, m, :reaction)
+    elseif matches.captures[1] == " out"
+        @info "opt-out was required" m.content m.author.username m.author.discriminator
+        opt_out(c, m, :reaction)
+    else
+        reply(c, m, "Sorry, are you playing me? Please check`react help`")
+    end
+    return nothing
+end
+
+function help_commander(c::Client, m::Message, ::Val{:game_master})
+    reply(c, m, """
+        How to play with the `gm` command:
+        ```
+        react help
+        react in
+        react out
+        ```
+        The commands `in` and `out` are to opt-in and opt-out of the reaction bot.
+        """)
+end
