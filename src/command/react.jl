@@ -1,4 +1,4 @@
-function reaction_commander(c::Client, m::Message)
+function commander(c::Client, m::Message, ::Val{:reaction})
     @info "reaction_commander called"
     startswith(m.content, COMMAND_PREFIX * "react") || return
 
@@ -7,7 +7,7 @@ function reaction_commander(c::Client, m::Message)
     matches = match(regex, m.content)
 
     if matches === nothing || matches.captures[1] ∈ (" help", nothing)
-        help_commander(c, m, Val(:reaction))
+        help_commander(c, m, :reaction)
     elseif matches.captures[1] == " in"
         @info "opt-in was required" m.content m.author.username m.author.discriminator
         opt_in(c, m, :reaction)

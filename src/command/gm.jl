@@ -1,5 +1,4 @@
-function game_master_commander(c::Client, m::Message)
-    @info "game_master_commander called"
+function commander(c::Client, m::Message, ::Val{:game_master})
     startswith(m.content, COMMAND_PREFIX * "gm") || return
 
     regex = Regex(COMMAND_PREFIX * raw"gm( help| in| out)? *(.*)$")
@@ -7,7 +6,7 @@ function game_master_commander(c::Client, m::Message)
     matches = match(regex, m.content)
 
     if matches === nothing || matches.captures[1] ∈ (" help", nothing)
-        help_commander(c, m, Val(:game_master))
+        help_commander(c, m, :game_master)
     elseif matches.captures[1] == " in"
         @info "opt-in was required" m.content m.author.username m.author.discriminator
         opt_in(c, m, :game_master)

@@ -1,3 +1,28 @@
+const active_commands = LittleDict([
+    :gm => false,
+    :help => true,
+    :j => true,
+    :react => true,
+    :tz => true,
+])
+
+const commands_names = LittleDict([
+    :gm => :game_master,
+    :help => :global_help,
+    :j => :julia_doc,
+    :react => :reaction,
+    :tz => :time_zone
+])
+
+const handlers_list = LittleDict([
+    :reaction => true,
+])
+
+const opt_services_list = Set([
+    :game_master,
+    :reaction,
+])
+
 function start_bot()
     global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
         presence = (game = (name = "HoJ", type = AT_GAME),),
@@ -9,21 +34,18 @@ function start_bot()
 end
 
 function init_handlers!(client::Client)
-    add_handler!(client, MessageCreate, react_handler)
+    for handler in handlers_list
+        handlers_list[handler] && add_handler!(client, MessageCreate, handler)
+    end
 end
 
 function init_commands!(client::Client)
-    add_command!(client, :tz, time_zone_commander)
-    add_command!(client, :j, julia_commander)
-    # add_command!(client, :gm, game_master_commander)
-    add_command!(client, :react, reaction_commander)
+    for command in active_commands
+        if active_commands(command)
+        add_command!(client, command, (c, m) -> commander(c, m, commands_names[command]))
+        end
+    end
 end
-
-# Purely informative atm
-const opt_services_list = Set([
-    :game_master,
-    :reaction,
-])
 
 commander(c::Client, m::Message, service) = commander(c, m, Val(service))
 help_commander(c::Client, m::Message, service) = help_commander(c, m, Val(service))
