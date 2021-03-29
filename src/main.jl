@@ -49,7 +49,7 @@ function start_bot(;
         prefix = COMMAND_PREFIX)
     init_handlers!(client, handlers)
     init_commands!(client, commands)
-    add_help!(c; help = help_message())
+    add_help!(client; help = help_message())
     open(client)
     wait(client)
 end
