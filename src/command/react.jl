@@ -2,7 +2,7 @@ function reaction_commander(c::Client, m::Message)
     @info "reaction_commander called"
     startswith(m.content, COMMAND_PREFIX * "react") || return
 
-    regex = Regex(COMMAND_PREFIX * raw"gm( help| in| out)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"react( help| in| out)? *(.*)$")
 
     matches = match(regex, m.content)
 
