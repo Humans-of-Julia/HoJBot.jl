@@ -2,6 +2,7 @@ const active_commands = LittleDict([
     :gm => false,
     :j => true,
     :react => true,
+    :src => true,
     :tz => true,
 ])
 
@@ -9,6 +10,7 @@ const commands_names = LittleDict([
     :gm => :game_master,
     :j => :julia_doc,
     :react => :reaction,
+    :src => :source,
     :tz => :time_zone
 ])
 

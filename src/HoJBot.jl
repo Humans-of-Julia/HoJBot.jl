@@ -15,6 +15,7 @@ include("command/tz.jl")
 include("command/j.jl")
 include("command/gm.jl")
 include("command/react.jl")
+include("command/src.jl")
 include("handler/reaction.jl")
 
 end # module
