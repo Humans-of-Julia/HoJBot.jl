@@ -36,7 +36,6 @@ function help_message()
     The following services are opt-in. Please check the related help command (`service help` for any `service` below).
     ```
     $opt
-    ```
     """
     return str
 end
