@@ -5,7 +5,7 @@ function julia_commander(c::Client, m::Message)
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j") || return
-    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc | source)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_julia_commander(c, m)
