@@ -19,12 +19,12 @@ end
 
 function help_commander(c::Client, m::Message, ::Val{:source})
     reply(c, m, """
-        How to opt-in/out of the `reaction` bot:
+        Source command usage.
+        Returns the Github repository url of HojBot:
         ```
-        react help
-        react in
-        react out
+        source
+        source repo|repository
         ```
-        The commands `in` and `out` are to opt-in and opt-out of the reaction bot.
-        """)
+        """
+    )
 end
