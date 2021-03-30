@@ -22,8 +22,8 @@ function help_commander(c::Client, m::Message, ::Val{:source})
         Source command usage.
         Returns the Github repository url of HojBot:
         ```
-        source
-        source repo|repository
+        src
+        src repo|repository
         ```
         """
     )
