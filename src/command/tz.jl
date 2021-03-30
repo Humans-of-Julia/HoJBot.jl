@@ -10,14 +10,14 @@ DATE_TIME_PATTERNS = (
     dateformat"yyyy-mm-dd HH:MMp", # AM/PM
 )
 
-function time_zone_commander(c::Client, m::Message)
+function commander(c::Client, m::Message, ::Val{:time_zone})
     # @info "time_zone_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "tz") || return
     regex = Regex(COMMAND_PREFIX * raw"tz (help|convert|aliases) *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] == "help"
-        help_time_zone_commander(c, m)
+        help_commander(c, m, :time_zone)
         return
     elseif matches.captures[1] == "aliases"
         help_time_zone_aliases(c, m)
@@ -28,7 +28,7 @@ function time_zone_commander(c::Client, m::Message)
     end
 end
 
-function help_time_zone_commander(c::Client, m::Message)
+function help_commander(c::Client, m::Message, ::Val{:time_zone})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
         How to use the `tz` command:

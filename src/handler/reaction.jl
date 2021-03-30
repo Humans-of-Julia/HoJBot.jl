@@ -59,13 +59,17 @@ const REACTORS = AbstractReactor[
     ExcitedReactor(),
 ]
 
-function react_handler(c::Client, e::MessageCreate)
+function handler(c::Client, e::MessageCreate, ::Val{:reaction})
     # @info "react_handler called"
     # @info "Received message" e.message.channel_id e.message.id e.message.content
+    username = e.message.author.username
+    discriminator = e.message.author.discriminator
+    !get_opt!(username, discriminator, :reaction) && return nothing
     for reactor in REACTORS
         rs = reactions(reactor, e.message)
         foreach(rs) do emoji
             create(c, Reaction, e.message, emoji)
         end
     end
+    return nothing
 end
