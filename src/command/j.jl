@@ -97,20 +97,16 @@ end
 
 function handle_julia_help_commander(c::Client, m::Message, name)
     # @info "julia_help_commander called"
-    if ';' ∈ name
-        reply(c, m, "Sorry, no semicolon allowed in the help query")
-    else
-        try
-            doc = string(eval(Meta.parse("Docs.@doc("*name*")")))
-            doc = parse_doc(doc)
-            docs = split_message_fixed(doc, extraregex = [r"\n≡.+\n", r"n-.+\n"])
-            for doc_chunck in docs
-                reply(c, m, doc_chunck)
-            end
-        catch ex
-            @show ex
-            reply(c, m, "Sorry, it didn't work.")
+    try
+        doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
+        doc = parse_doc(doc)
+        docs = split_message_fixed(doc, extraregex = [r"\n≡.+\n", r"n-.+\n"])
+        for doc_chunck in docs
+            reply(c, m, doc_chunck)
         end
+    catch ex
+        @show ex
+        reply(c, m, "Sorry, it didn't work.")
     end
     return nothing
 end
