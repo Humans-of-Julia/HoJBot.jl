@@ -8,7 +8,7 @@ using JSON
 using OrderedCollections
 using TimeZones
 
-const COMMAND_PREFIX = ","
+const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 
 include("main.jl")
 include("command/tz.jl")
