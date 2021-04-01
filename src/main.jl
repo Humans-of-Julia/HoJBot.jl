@@ -12,9 +12,10 @@ const commands_names = LittleDict([
     :tz => :time_zone
 ])
 
-const handlers_list = LittleDict([
-    :reaction => true,
-])
+const handlers_list = [
+    (:reaction, MessageCreate, true),
+    (:whistle, MessageReactionAdd, true),
+]
 
 const opt_services_list = [
     :game_master,
@@ -55,8 +56,8 @@ function start_bot(;
 end
 
 function init_handlers!(client::Client, handlers)
-    for (hand, active) in handlers
-        active && add_handler!(client, MessageCreate, (c, e) -> handler(c, e, hand))
+    for (symbol, event, active) in handlers
+        active && add_handler!(client, event, (c, e) -> handler(c, e, Val(symbol)))
     end
 end
 
@@ -66,10 +67,6 @@ function init_commands!(client::Client, commands)
     end
 end
 
-handler(c::Client, e::MessageCreate, hand) = begin
-    @info "handler" c e hand
-    handler(c, e, Val(hand))
-end
 commander(c::Client, m::Message, service) =
 begin
     @info "commander" c m service
