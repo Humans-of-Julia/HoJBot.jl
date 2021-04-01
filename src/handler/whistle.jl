@@ -1,43 +1,59 @@
 # Whistle blower - complain about inappropriate content
 
-struct WhistleBlower
-    user_id::UInt64
-    message_id::UInt64
-end
-
-# In-memory cache that keeps track of how many whistle blower reports
-# for the message.
-#   Key: message_id
-#   Value: count of whistle blower reports
+"""
+Number of whistle blower reports for a message.
+- Key: `message_id`
+- Value: count of whistle blower reports
+"""
 const WHISTLE_REPORTS_COUNT = Dict{UInt64,UInt64}()
 
-# Keep track of how which messages a whistle blower has reported
-#   Key: user_id
-#   Value: Set of message_id
+"""
+Which messages a whistle blower has reported so far.
+- Key: `user_id`
+- Value: Set of `message_id`
+"""
 const WHISTLE_REPORTS = Dict{UInt64,Set{UInt64}}()
 
-# How many reports needs to be received before the message should
-# be deleted.
-const REMOVE_MESSAGE_MIN_REPORTS = 3
+"""
+How many reports needs to be received before the message is deleted.
+"""
+const WHISTLE_MIN_REPORTS_FOR_REMOVAL = 3
 
-# Emoji used to trigger a whistle blower report
+"""
+Emoji used to trigger a whistle blower report
+"""
 const WHISTLE_EMOJI = "🚷"
 
 const WHISTLE_BLOWER_THANK_YOU_MESSAGE = remove_newline("""
-    Thank you for your whistle blower report. The message with potentially
-    inappropriate content will be removed automatically once we receive
-    enough reports. Please direct any questions to the @Moderator team.
+    **Thank you for the report.** :thumbsup:
+    The message with potentially inappropriate content will be
+    removed automatically once we receive enough reports.
+    Please direct any question to the Moderator team.
+    Your reaction emoji has also been instantly removed from
+    the original message in order to keep your report anonymous
+    from the public.
     """)
 
-# Handler
+"""
+    handler(c::Client, e::MessageReactionAdd, ::Val{:whistle})
+
+Handle whistle blower reports. The complete flow is as follows:
+
+1. Reporter places a special emoji on the potentially inappropriate message
+2. This handler function is called.
+3. Increment the counter for whistle blower reports on the reported message
+4. If there are enough reports, delete the reported message
+5. Otherwise, just remove the emoji.
+6. Send a DM to the report about the action that's taken.
+7. Log an audit event.
+"""
 function handler(c::Client, e::MessageReactionAdd, ::Val{:whistle})
-    @info "MessageReactionAdd" e.user_id e.channel_id e.message_id e.emoji
 
-    # Find previous reports by this user
-    prior_user_reports = get!(WHISTLE_REPORTS, e.user_id, Set{UInt64}())
-
-    # If emoji matches
     if e.emoji.name === WHISTLE_EMOJI
+        @info "MessageReactionAdd (whistle)" e.user_id e.channel_id e.message_id e.emoji
+
+        # Find previous reports by this user
+        prior_user_reports = get!(WHISTLE_REPORTS, e.user_id, Set{UInt64}())
 
         # Increment counter
         count = get!(WHISTLE_REPORTS_COUNT, e.message_id, 0)
@@ -46,7 +62,7 @@ function handler(c::Client, e::MessageReactionAdd, ::Val{:whistle})
         end
         WHISTLE_REPORTS_COUNT[e.message_id] = count
 
-        if count >= REMOVE_MESSAGE_MIN_REPORTS
+        if count >= WHISTLE_MIN_REPORTS_FOR_REMOVAL
             @info "Max reports reached" e.user_id e.channel_id e.message_id
             # delete the message
             m = Message(; id = e.message_id, channel_id = e.channel_id)
@@ -63,14 +79,15 @@ function handler(c::Client, e::MessageReactionAdd, ::Val{:whistle})
         uuid = string(uuid4())[end-11:end]
         reference = " (Reference ID: $uuid)"
         @discord create(c, Message, dm_channel;
-            content = WHISTLE_BLOWER_THANK_YOU_MESSAGE)
+            content = WHISTLE_BLOWER_THANK_YOU_MESSAGE * reference)
 
         # remember this report
         push!(prior_user_reports, e.message_id)
 
         # log an audit event
         user = @discord retrieve(c, User, e.user_id)
-        audit(user.id, user.username, user.discriminator,
-            "whistle report against message $(e.message_id) ref=$uuid cnt=$count")
+        audit("whistle",
+            user.id, user.username, user.discriminator,
+            "message_id=$(e.message_id) uuid=$uuid count=$count")
     end
 end
