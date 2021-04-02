@@ -3,7 +3,7 @@
 This is the Discord bot for Humans of Julia community server.
 
 **All HoJ members are invited to contribute to this project.**
-Please read [CONTRIBUTING.md](contribution guide) to get started.
+Please read ![CONTRIBUTING.md](contribution guide) to get started.
 
 ## Features
 
