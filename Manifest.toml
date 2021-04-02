@@ -21,7 +21,7 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
 [[Discord]]
 deps = ["Dates", "Distributed", "HTTP", "InteractiveUtils", "JSON", "LRUCache", "OpenTrick", "Setfield", "TimeToLive"]
-git-tree-sha1 = "c6adfdba18eb909e1745f37359bb4cded719a7c6"
+git-tree-sha1 = "e4ac8854f7dce3db5b780fe61a5505c470eec544"
 repo-rev = "master"
 repo-url = "https://github.com/Humans-of-Julia/Discord.jl.git"
 uuid = "fcbf000d-02fd-53f1-af91-d952191673d3"
