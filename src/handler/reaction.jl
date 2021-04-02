@@ -32,7 +32,7 @@ end
 struct DisappointedReactor <: AbstractReactor end
 
 function reactions(::DisappointedReactor, m::Message)
-    words = ["disappointed", "unhappy"]
+    words = ["disappointed", "unhappy", "sad", "aw shucks", "yeow"]
     if any(occursin.(words, m.content))
         return ['😞']
     end
@@ -42,12 +42,23 @@ end
 struct ExcitedReactor <: AbstractReactor end
 
 function reactions(::ExcitedReactor, m::Message)
-    words = ["excited", "fantastic", "fabulous", "wonderful", "looking forward to", "love", "learn", "julia", "saved me"]
+    words = ["excited", "fantastic", "fabulous", "wonderful", "looking forward to", "love", "learn", "julia", "saved me", "beautiful"]
     if any(occursin.(words, m.content))
         return ['🤩']
     end
     return NO_REACTION
 end
+
+struct GoodbyeReactor <: AbstractReactor end
+
+function reactions(::GoodbyeReactor, m::Message)
+    words = ["cya","bye","goodbye","ciao","adios"]
+    if any(occursin.(words, m.content))
+        return ['👋']
+    end
+    return NO_REACTION
+end
+
 
 # ----------------------------------------------------------------------
 # Main logic
@@ -57,6 +68,7 @@ const REACTORS = AbstractReactor[
     HappyReactor(),
     DisappointedReactor(),
     ExcitedReactor(),
+    GoodbyeReactor(),
 ]
 
 function handler(c::Client, e::MessageCreate, ::Val{:reaction})
