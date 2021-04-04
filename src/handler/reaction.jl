@@ -52,7 +52,7 @@ end
 struct GoodbyeReactor <: AbstractReactor end
 
 function reactions(::GoodbyeReactor, m::Message)
-    words = ["cya","bye","goodbye","ciao","adios"]
+    words = ["cya", "bye", "goodbye", "ciao", "adios"]
     if any(occursin.(words, m.content))
         return ['👋']
     end
