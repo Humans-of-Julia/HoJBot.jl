@@ -24,7 +24,7 @@ Emoji used to trigger a whistle blower report
 """
 const WHISTLE_EMOJI = "🚷"
 
-const WHISTLE_BLOWER_THANK_YOU_MESSAGE = remove_newline("""
+const WHISTLE_BLOWER_THANK_YOU_MESSAGE = replace_newlines("""
     **Thank you for the report.** :thumbsup:
     The message with potentially inappropriate content will be
     removed automatically once we receive enough reports.

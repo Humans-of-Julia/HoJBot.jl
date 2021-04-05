@@ -3,18 +3,21 @@ const active_commands = LittleDict([
     :j => true,
     :react => true,
     :tz => true,
+    :discourse => true,
 ])
 
 const commands_names = LittleDict([
     :gm => :game_master,
     :j => :julia_doc,
     :react => :reaction,
-    :tz => :time_zone
+    :tz => :time_zone,
+    :discourse => :discourse,
 ])
 
 const handlers_list = [
     (:reaction, MessageCreate, true),
     (:whistle, MessageReactionAdd, true),
+    (:discourse, MessageReactionAdd, true),
 ]
 
 const opt_services_list = [
@@ -44,7 +47,8 @@ end
 function start_bot(;
     commands = active_commands,
     handlers = handlers_list,
-    )
+)
+    @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
         presence = (game = (name = "HoJ", type = AT_GAME),),
         prefix = COMMAND_PREFIX)
