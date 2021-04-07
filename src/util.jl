@@ -45,3 +45,45 @@ function audit(
         println(io, "$(now(tz"UTC"))\t$name#$discriminator\t$user_id\t$message")
     end
 end
+
+function update_namescount(
+        source::AbstractString,
+        name::AbstractString,
+        user_id::UInt,
+        username::AbstractString,
+        discriminator::AbstractString,
+        channel_id::UInt,
+        channel_name::AbstractString,
+        count_docs_dir = joinpath("data", "docs"),
+        count_names_file = joinpath(count_docs_dir, "$source.json")
+    )
+    
+    mkpath(count_docs_dir)
+    isfile(count_names_file) || write(count_names_file, "{}")
+    namescount = JSON.parsefile(count_names_file)
+
+    info = [
+        Dict(
+            "who" => "$username#$discriminator(id:$user_id)",
+            "when" => "$(now(tz"UTC"))",
+            "where" => "#$channel_name(id:$channel_id)"
+        )
+    ]
+
+    if name in keys(namescount)
+        namescount[name]["count"] += 1
+        append!(
+            namescount[name]["info"], info
+        )
+    else
+        push!(
+            namescount, 
+                name => Dict(
+                    "count" => 1,
+                    "info" => info
+                )
+        )
+    end
+    write(count_names_file, JSON.json(namescount, 4))
+    return namescount[name]["count"]
+end

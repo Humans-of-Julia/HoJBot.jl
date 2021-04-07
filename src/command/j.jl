@@ -66,12 +66,14 @@ function commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j") || return
-    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_commander(c, m, Val(:julia_doc))
     elseif matches.captures[1] in ("?", " doc")
         handle_julia_help_commander(c, m, matches.captures[2])
+    elseif matches.captures[1] == "packages"
+        handle_julia_package_list(c, m)
     else
         reply(c, m, "Sorry, I don't understand the request; use `j help` for help")
     end
@@ -81,15 +83,17 @@ end
 function help_commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
-        For the moment, only "doc" is accept, for showing the docstring.
+        The `j` commands shows the docstring of names in the Base and other selected packages.
 
         How to use the `j` command:
         ```
         j help
+        j packages
         j? <name>
         j doc <name>
         ```
         `j help` returns this help
+        `j packages` shows which packages are available for showing their docstrings
         `j? <name>` and `j doc <name>` return the documentation for `<name>`
         """)
     return nothing
@@ -100,6 +104,13 @@ function handle_julia_help_commander(c::Client, m::Message, name)
     try
         doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
         doc = parse_doc(doc)
+        user = @discord retrieve(c, User, m.author.id)
+        channel = @discord get_channel(c, m.channel_id)
+        count = update_namescount(
+                "namescount", name,
+                user.id, user.username, user.discriminator,
+                m.channel_id, channel.name)
+        doc *= "\n*(Count number for `$name`: $count)*"
         docs = split_message_fixed(doc, extraregex = [r"\n≡.+\n", r"n-.+\n"])
         for doc_chunck in docs
             reply(c, m, doc_chunck)
@@ -109,4 +120,9 @@ function handle_julia_help_commander(c::Client, m::Message, name)
         reply(c, m, "Sorry, it didn't work.")
     end
     return nothing
+end
+
+function handle_julia_package_list(c::Client, m::Message)
+    
+    reply(c, m, "Base")
 end

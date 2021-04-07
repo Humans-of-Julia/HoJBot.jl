@@ -8,6 +8,7 @@ using JSON
 using OrderedCollections
 using TimeZones
 using UUIDs
+using Pkg
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 
