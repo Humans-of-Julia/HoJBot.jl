@@ -113,11 +113,13 @@ function handle_julia_help_commander(c::Client, m::Message, name)
         doc = parse_doc(doc)
         user = @discord retrieve(c, User, m.author.id)
         channel = @discord get_channel(c, m.channel_id)
-        count = update_namescount(
+        if !occursin("No documentation found", doc)
+            count = update_namescount(
                 "namescount", name,
                 user.id, user.username, user.discriminator,
                 m.channel_id, channel.name)
-        doc *= "\n*(Count number for `$name`: $count)*"
+            doc *= "\n*(Count number for `$name`: $count)*"
+        end
         docs = split_message_fixed(doc, extraregex = [r"\n≡.+\n", r"n-.+\n"])
         for doc_chunck in docs
             reply(c, m, doc_chunck)
