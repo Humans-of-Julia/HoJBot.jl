@@ -132,7 +132,7 @@ function handle_julia_help_commander(c::Client, m::Message, name)
 end
 
 function handle_doc_stats(c::Client, m::Message, captured::AbstractString)
-    # @info "julia_help_commander called"
+    # @info "handle_doc_stats called"
     try
         r = match(r"(top|head|high|bottom|tail|low) +(\d*) *$", captured)
         if captured == ""
