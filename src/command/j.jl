@@ -66,14 +66,16 @@ function commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j") || return
-    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages| stats)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_commander(c, m, Val(:julia_doc))
     elseif matches.captures[1] in ("?", " doc")
         handle_julia_help_commander(c, m, matches.captures[2])
-    elseif matches.captures[1] == "packages"
+    elseif matches.captures[1] == " packages"
         handle_julia_package_list(c, m)
+    elseif matches.captures[1] == " stats"
+        handle_doc_stats(c, m, matches.captures[2])
     else
         reply(c, m, "Sorry, I don't understand the request; use `j help` for help")
     end
@@ -83,18 +85,23 @@ end
 function help_commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
-        The `j` commands shows the docstring of names in the Base and other selected packages.
+        The `j` commands shows the docstring of names in the Base and other selected packages,
+        as well as statistics of its use.
 
         How to use the `j` command:
         ```
         j help
-        j packages
         j? <name>
         j doc <name>
+        j packages
+        j stats <name>
+        j stats <place> <number>
         ```
         `j help` returns this help
-        `j packages` shows which packages are available for showing their docstrings
+        `j packages` shows which packages are available for showing their docstrings (incomplete)
         `j? <name>` and `j doc <name>` return the documentation for `<name>`
+        `j stats <name>` return how many times the docstring for `name` has been queried.
+        `j stats <place> <number>` return the top (if `place` is equal to either "top" or "head") or the bottom (if `place` is equal to either "bottom" or "tail") `number` names that have been queried.
         """)
     return nothing
 end
@@ -122,7 +129,26 @@ function handle_julia_help_commander(c::Client, m::Message, name)
     return nothing
 end
 
+function handle_doc_stats(c::Client, m::Message, captured::AbstractString)
+    # @info "julia_help_commander called"
+    try
+        r = match(r"(top|head|high|bottom|tail|low) +(\d*) *$", captured)
+        if captured == ""
+            statsmgs = stats_namescount("namescount")
+        elseif r === nothing
+            statsmgs = stats_namescount("namescount", name=strip(captured))        
+        else
+            place = r.captures[1] in ("top", "head", "high") ? "top" : "bottom"
+            statsmgs = stats_namescount("namescount", place=place, number=parse(Int,r.captures[2]))
+        end
+        reply(c, m, statsmgs)
+    catch ex
+        @show ex
+        reply(c, m, "Sorry, it didn't work.")
+    end
+    return nothing
+end
+
 function handle_julia_package_list(c::Client, m::Message)
-    
-    reply(c, m, "Base")
+    reply(c, m, "Packages available with docstrings:\n≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡\n `Base`")
 end
