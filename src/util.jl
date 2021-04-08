@@ -71,7 +71,7 @@ function update_namescount(
 
     info = [
         Dict(
-            "who" => "$username#$discriminator(id:$user_id)",
+            # "who" => "$username#$discriminator(id:$user_id)",
             "when" => "$(now(tz"UTC"))",
             "where" => "#$channel_name(id:$channel_id)"
         )
