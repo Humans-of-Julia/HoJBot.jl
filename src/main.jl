@@ -47,6 +47,7 @@ end
 function start_bot(;
     commands = active_commands,
     handlers = handlers_list,
+    run_duration = Days(365),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
@@ -56,6 +57,7 @@ function start_bot(;
     init_commands!(client, commands)
     # add_help!(client; help = help_message())
     open(client)
+    auto_shutdown(run_duration)
     wait(client)
 end
 
@@ -68,6 +70,23 @@ end
 function init_commands!(client::Client, commands)
     for (com, active) in commands
         active && add_command!(client, com, (c, m) -> commander(c, m, commands_names[com]))
+    end
+end
+
+"""
+    auto_shutdown(run_duration::TimePeriod)
+
+Run a background process to track the program's run time and exit
+the program when it has exceeded the specified `run_duration`.
+"""
+function auto_shutdown(run_duration::TimePeriod)
+    start_time = now()
+    @async while true
+        if now() > start_time + run_duration
+            @info "Times up! The bot is shutting down automatically."
+            exit(0)
+        end
+        sleep(5)
     end
 end
 
