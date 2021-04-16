@@ -1,5 +1,6 @@
 const active_commands = LittleDict([
     :gm => false,
+    :ig => true,
     :j => true,
     :react => true,
     :tz => true,
@@ -8,6 +9,7 @@ const active_commands = LittleDict([
 
 const commands_names = LittleDict([
     :gm => :game_master,
+    :ig => :ig,
     :j => :julia_doc,
     :react => :reaction,
     :tz => :time_zone,
@@ -56,6 +58,7 @@ function start_bot(;
     init_handlers!(client, handlers)
     init_commands!(client, commands)
     # add_help!(client; help = help_message())
+    warm_up()
     open(client)
     auto_shutdown(run_duration)
     wait(client)
@@ -163,5 +166,23 @@ function opt_out(c::Client, m::Message, service)
             It is sad that you're leaving our `$(string(service))` service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
             """
         )
+    end
+end
+
+# TODO use SnoopCompile to find precompile methods
+function warm_up()
+    @info "Warming up..."
+    Threads.@spawn begin
+        elapsed = @elapsed begin
+            symbol = "AAPL"
+            ig_get_quote(symbol)
+            ig_save_portfolio(UInt64(0), IgPortfolio(100, [IgHolding(symbol, 100, today(), 130)]))
+            ig_load_portfolio(UInt64(0))
+
+            from_date, to_date = Date(2020,1,1), Date(2020,12,31)
+            df = ig_historical_prices(symbol, from_date, to_date)
+            ig_chart(symbol, df.Date, df."Adj Close")
+        end
+        @info "Completed warm up in $elapsed seconds"
     end
 end
