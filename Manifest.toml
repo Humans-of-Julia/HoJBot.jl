@@ -21,9 +21,9 @@ uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
 [[Discord]]
 deps = ["Dates", "Distributed", "HTTP", "InteractiveUtils", "JSON", "LRUCache", "OpenTrick", "Setfield", "TimeToLive"]
-git-tree-sha1 = "c6adfdba18eb909e1745f37359bb4cded719a7c6"
+git-tree-sha1 = "e4ac8854f7dce3db5b780fe61a5505c470eec544"
 repo-rev = "master"
-repo-url = "https://github.com/Humans-of-Julia/Discord.jl.git"
+repo-url = "https://github.com/Humans-of-Julia/Discord.jl"
 uuid = "fcbf000d-02fd-53f1-af91-d952191673d3"
 version = "0.1.0"
 
@@ -76,6 +76,12 @@ deps = ["Dates", "Mmap", "Parsers", "Unicode"]
 git-tree-sha1 = "81690084b6198a2e1da36fcfda16eeca9f9f24e4"
 uuid = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 version = "0.21.1"
+
+[[JSON3]]
+deps = ["Dates", "Mmap", "Parsers", "StructTypes", "UUIDs"]
+git-tree-sha1 = "980b210df4b9bc6a45f7accd5cbb263ee6fb2768"
+uuid = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
+version = "1.8.0"
 
 [[LRUCache]]
 git-tree-sha1 = "5a9338dce0811619e42c9e9aa9ae044c3c82a58f"
@@ -207,6 +213,12 @@ version = "0.7.0"
 
 [[Sockets]]
 uuid = "6462fe0b-24de-5631-8697-dd941f90decc"
+
+[[StructTypes]]
+deps = ["Dates", "UUIDs"]
+git-tree-sha1 = "5eaf731e88587bb72a6c1262c0a014cd1859a08d"
+uuid = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
+version = "1.5.2"
 
 [[TOML]]
 deps = ["Dates"]

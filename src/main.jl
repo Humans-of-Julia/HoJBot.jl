@@ -4,19 +4,22 @@ const active_commands = LittleDict([
     :react => true,
     :src => true,
     :tz => true,
+    :discourse => true,
 ])
 
 const commands_names = LittleDict([
     :gm => :game_master,
     :j => :julia_doc,
     :react => :reaction,
-    :src => :source,
-    :tz => :time_zone
+    :tz => :time_zone,
+    :discourse => :discourse,
 ])
 
-const handlers_list = LittleDict([
-    :reaction => true,
-])
+const handlers_list = [
+    (:reaction, MessageCreate, true),
+    (:whistle, MessageReactionAdd, true),
+    (:discourse, MessageReactionAdd, true),
+]
 
 const opt_services_list = [
     :game_master,
@@ -45,7 +48,8 @@ end
 function start_bot(;
     commands = active_commands,
     handlers = handlers_list,
-    )
+)
+    @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
         presence = (game = (name = "HoJ", type = AT_GAME),),
         prefix = COMMAND_PREFIX)
@@ -57,8 +61,8 @@ function start_bot(;
 end
 
 function init_handlers!(client::Client, handlers)
-    for (hand, active) in handlers
-        active && add_handler!(client, MessageCreate, (c, e) -> handler(c, e, hand))
+    for (symbol, event, active) in handlers
+        active && add_handler!(client, event, (c, e) -> handler(c, e, Val(symbol)))
     end
 end
 
@@ -68,10 +72,6 @@ function init_commands!(client::Client, commands)
     end
 end
 
-handler(c::Client, e::MessageCreate, hand) = begin
-    @info "handler" c e hand
-    handler(c, e, Val(hand))
-end
 commander(c::Client, m::Message, service) =
 begin
     @info "commander" c m service
