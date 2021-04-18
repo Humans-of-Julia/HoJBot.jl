@@ -63,7 +63,7 @@ StructTypes.StructType(::Type{HoJBot.DiscoursePost}) = StructTypes.Struct()
 """
 Construct a new `DiscourseData` based upon JSON3 data returned from a search.
 """
-function DiscourseData(json::JSON3.Object)
-    list = [DiscoursePost(t.id, t.slug) for t in json.topics]
+function DiscourseData(json::JSON3.Array, make_post::Function)
+    list = [make_post(t) for t in json]
     return DiscourseData(list, 1)
 end
