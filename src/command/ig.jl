@@ -31,23 +31,23 @@ end
 
 function help_commander(c::Client, m::Message, ::Val{:ig})
     discord_reply(c, m, """
-        Play the investment game (ig)
+        Play the investment game (ig). US market only for now.
         ```
         ig start-game
         ig abandon-game
         ```
         Research stocks:
         ```
-        ig quote <symbol>            - get current quote
-        ig chart <symbol> [period]   - plot historical prices
+        ig quote <symbol>            - get current price quote
+        ig chart <symbol> [period]   - historical price chart
             Period is optional. Examples are: 200d, 36m, or 10y
               for 200 days, 36 months, or 10 years respectively.
         ```
         Manage portfolio:
         ```
-        ig view                - view current holdings and market values
-        ig buy <n> <symbol>    - buy <n> shares of stocks
-        ig sell <n> <symbol>   - sell <n> shares of stocks
+        ig view                - view holdings and current market values
+        ig buy <n> <symbol>    - buy <n> shares of a stock
+        ig sell <n> <symbol>   - sell <n> shares of a stock
         ```
         """)
 end
