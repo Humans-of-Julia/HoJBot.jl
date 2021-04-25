@@ -145,12 +145,10 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
     ig_affirm_player(user.id)
 
     df = ig_mark_to_market_portfolio(user.id)
+    ig_reformat_view!(df)
 
-    # Shorten colummn headings for better display in Discord
-    select!(df, Not(:purchase_price))
-    rename!(df, "current_price" => "price", "market_value" => "amount")
-
-    table = ig_view_table(PrettyView(), df)
+    view = length(args) == 1 && args[1] == "simple" ? SimpleView() : PrettyView()
+    table = ig_view_table(view, df)
     total_str = format_amount(round(Int, sum(df.amount)))
 
     discord_reply(c, m, ig_hey(user.username,
@@ -161,6 +159,12 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
         ```
         Total portfolio Value: $total_str
         """))
+end
+
+# Shorten colummn headings for better display in Discord
+function ig_reformat_view!(df::AbstractDataFrame)
+    select!(df, Not(:purchase_price))
+    rename!(df, "current_price" => "price", "market_value" => "amount")
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
@@ -476,12 +480,19 @@ end
 "Return portfolio view as string in a simple format"
 function ig_view_table(::SimpleView, df::AbstractDataFrame)
     io = IOBuffer()
-    for r in eachrow(df)
-        println(io,
-            "- ", r.symbol, ": ",
-            round(Int, r.shares), " x \$", format_amount(r.current_price),
-            " = \$", format_amount(r.market_value))
+    # @show "ig_view_table" df
+    for (i, r) in enumerate(eachrow(df))
+        if !startswith(r.symbol, "CASH:")
+            println(io,
+                i, ". ", r.symbol, ": ",
+                round(Int, r.shares), " x \$", format_amount(r.price),
+                " = \$", format_amount(round(Int, r.amount)))
+        else
+            println(io,
+                i, ". ", r.symbol, " = ", format_amount(round(Int, r.amount)))
+        end
     end
+
     return String(take!(io))
 end
 

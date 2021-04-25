@@ -15,7 +15,8 @@ using HoJBot:
     ig_file_path, ig_get_quote, ig_grouped_holdings, ig_hey,
     ig_historical_prices, ig_holdings_data_frame, ig_is_player,
     ig_load_all_portfolios, ig_load_portfolio, ig_mark_to_market!,
-    ig_mark_to_market_portfolio, ig_ranking_table, ig_remove_game, ig_save_portfolio,
+    ig_mark_to_market_portfolio, ig_ranking_table,
+    ig_reformat_view!, ig_remove_game, ig_save_portfolio,
     ig_sell, ig_start_new_game, ig_value_all_portfolios, ig_view_table
 
 Pretend.activate()
@@ -175,11 +176,14 @@ mocked_client() = Client("hey")
 
             # compatible column names
             @test Set(propertynames(ig_cash_entry(pf))) == Set(propertynames(df3))
-        end
 
-        # translation to string
-        @test_nowarn ig_view_table(SimpleView(), df2)
-        @test_nowarn ig_view_table(PrettyView(), df2)
+            # translation to string
+            @test_nowarn ig_view_table(PrettyView(), df2)
+
+            # SimpleView requires specific format
+            @test_nowarn ig_reformat_view!(df3)
+            @test_nowarn ig_view_table(SimpleView(), df3)
+        end
     end
 
     test_ig_cases("Ranking") do
@@ -220,6 +224,7 @@ mocked_client() = Client("hey")
 
             @test_nowarn ig_execute(c, m, u, Val(Symbol("start-game")), [])
             @test_nowarn ig_execute(c, m, u, Val(:view), [])
+            @test_nowarn ig_execute(c, m, u, Val(:view), ["simple"])
             @test_nowarn ig_execute(c, m, u, Val(:buy), ["100", "aapl"])
             @test_nowarn ig_execute(c, m, u, Val(:sell), ["100", "aapl"])
             @test_nowarn ig_execute(c, m, u, Val(Symbol("abandon-game-really")), [])
