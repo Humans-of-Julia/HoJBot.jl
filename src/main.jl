@@ -70,7 +70,7 @@ function start_bot(;
     # add_help!(client; help = help_message())
     warm_up()
     open(client)
-    auto_shutdown(run_duration)
+    auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
 end
 
@@ -90,17 +90,33 @@ end
     auto_shutdown(run_duration::TimePeriod)
 
 Run a background process to track the program's run time and exit
-the program when it has exceeded the specified `run_duration`.
+the program when it has exceeded the specified `run_duration` or
+when a file exists at `trigger_path`.
 """
-function auto_shutdown(run_duration::TimePeriod)
+function auto_shutdown(c::Client, run_duration::TimePeriod, trigger_path::AbstractString = "")
     start_time = now()
     @async while true
         if now() > start_time + run_duration
             @info "Times up! The bot is shutting down automatically."
-            exit(0)
+            shutdown_gracefully(c)
+        end
+        if length(trigger_path) > 0 && isfile(trigger_path)
+            @info "The bot is shutting down via trigger path `$trigger_path`."
+            rm(trigger_path)
+            shutdown_gracefully(c)
         end
         sleep(5)
     end
+end
+
+function shutdown_gracefully(c::Client)
+    try
+        close(c)
+    catch ex
+        @warn "Unable to close client connection" ex
+    end
+    sleep(1)
+    exit(0)
 end
 
 commander(c::Client, m::Message, service) =

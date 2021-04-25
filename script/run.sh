@@ -13,7 +13,7 @@ fi
 
 # Default environment settings
 : ${RUN_ONCE=no}
-: ${RUN_DURATION_MINUTES=360}
+: ${RUN_DURATION_MINUTES=2880}
 
 while true; do
     echo "`date`: Starting HoJBot..."
@@ -21,6 +21,9 @@ while true; do
     if [[ "$RUN_ONCE" == "yes" ]]; then
         break
     fi
-    sleep 1  # throttle to avoid a hot loop when the process keep crashing
+    THROTTLE=10
+    echo "`date`: throttling for $THROTTLE seconds before restart."
+    echo "`date`: you may hit Ctrl-C to shut down completely."
+    sleep $THROTTLE
 done
 echo "`date`: Program exited normally"
