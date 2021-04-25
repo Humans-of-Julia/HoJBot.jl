@@ -9,14 +9,14 @@ using Discord:
 using HoJBot:
     IgHolding, IgPortfolio, IgUserError, PrettyView, SimpleView,
     current_date, discord_channel, discord_reply, discord_upload_file,
-    recent_date_range,
-    retrieve, upload_file, ig_affirm_non_player, ig_affirm_player,
+    recent_date_range, retrieve, retrieve_users, upload_file,
+    ig_affirm_non_player, ig_affirm_player,
     ig_buy, ig_cash_entry, ig_chart, ig_count_shares, ig_execute,
     ig_file_path, ig_get_quote, ig_grouped_holdings, ig_hey,
     ig_historical_prices, ig_holdings_data_frame, ig_is_player,
     ig_load_all_portfolios, ig_load_portfolio, ig_mark_to_market!,
-    ig_mark_to_market_portfolio, ig_remove_game, ig_save_portfolio,
-    ig_sell, ig_start_new_game, ig_view_table
+    ig_mark_to_market_portfolio, ig_ranking_table, ig_remove_game, ig_save_portfolio,
+    ig_sell, ig_start_new_game, ig_value_all_portfolios, ig_view_table
 
 Pretend.activate()
 
@@ -51,6 +51,13 @@ mock_currrent_date() = Date(2021, 1, 11)
 mock_reply(c::Client, m::Message, s::AbstractString) = nothing
 mock_upload_file(c::Client, ch::DiscordChannel, filename::AbstractString; kwargs...) = nothing
 mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
+
+function mock_retrieve_users(c::Client, ids::Vector{UInt64})
+    return Dict(id => User(; id=id, username="$id") for id in ids)
+end
+
+# Mock objects
+mocked_client() = Client("hey")
 
 @testset "Investment Game" begin
 
@@ -175,6 +182,27 @@ mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
         @test_nowarn ig_view_table(PrettyView(), df2)
     end
 
+    test_ig_cases("Ranking") do
+        ig_buy(USER_ID, "AAPL", 100, 60)
+        ig_buy(USER_ID, "IBM", 100, 60)
+        ig_buy(USER_ID2, "AAPL", 100, 120)  # bought at higher price i.e. less cash remaining
+        ig_buy(USER_ID2, "IBM", 100, 120)
+        apply(
+            ig_get_quote => mock_ig_get_quote_100,
+            retrieve_users => mock_retrieve_users,
+        ) do
+            valuations = @test_nowarn ig_value_all_portfolios()
+            # ranking order: highest valuation is at the top
+            @test valuations[1].id == USER_ID
+            @test valuations[2].id == USER_ID2
+
+            client = mocked_client()
+            rt = @test_nowarn ig_ranking_table(client)
+            @test rt[1, :player] == "$USER_ID"
+            @test rt[2, :player] == "$USER_ID2"
+        end
+    end
+
     test_ig_cases("Executors") do
         c = Client("test")
         m = Message(; id = 0x00, channel_id = 0x00)
@@ -184,6 +212,7 @@ mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
             discord_reply => mock_reply,
             discord_upload_file => mock_upload_file,
             ig_get_quote => mock_ig_get_quote_100,
+            retrieve_users => mock_retrieve_users,
         ) do
             @test_nowarn ig_execute(c, m, u, Val(Symbol("start-game")), [])
             @test_nowarn ig_execute(c, m, u, Val(Symbol("abandon-game")), [])
@@ -198,6 +227,9 @@ mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
             @test_nowarn ig_execute(c, m, u, Val(:quote), ["aapl"])
             @test_nowarn ig_execute(c, m, u, Val(:chart), ["aapl"])
             @test_nowarn ig_execute(c, m, u, Val(:chart), ["aapl", "100d"])
+
+            @test_nowarn ig_execute(c, m, u, Val(:rank), [])
+            @test_nowarn ig_execute(c, m, u, Val(:rank), ["10"])
         end
     end
 
@@ -217,7 +249,10 @@ mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
     end
 
     @testset "Integration tests" begin
-        @test_nowarn ig_historical_prices("AAPL", Date(2021, 1, 1), Date(2021, 1, 31))
+        from_date, to_date = Date(2021, 1, 1), Date(2021, 1, 31)
+        @test_nowarn ig_historical_prices("AAPL", from_date, to_date)
+        @test_throws IgUserError ig_historical_prices("BADSYMBOL", from_date, to_date)
     end
 
+    clean_ig_game_files()
 end

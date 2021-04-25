@@ -182,17 +182,23 @@ end
 # TODO use SnoopCompile to find precompile methods
 function warm_up()
     @info "Warming up..."
-    Threads.@spawn begin
-        elapsed = @elapsed begin
+    Threads.@spawn try
+        dummy_user_id = UInt64(0)
+        elapsed = @elapsed try
             symbol = "AAPL"
             ig_get_quote(symbol)
-            ig_save_portfolio(UInt64(0), IgPortfolio(100, [IgHolding(symbol, 100, today(), 130)]))
-            ig_load_portfolio(UInt64(0))
+            ig_save_portfolio(dummy_user_id, IgPortfolio(100, [IgHolding(symbol, 100, today(), 130)]))
+            ig_load_portfolio(dummy_user_id)
+            ig_ranking_table(Client("hey"))
 
             from_date, to_date = Date(2020,1,1), Date(2020,12,31)
             df = ig_historical_prices(symbol, from_date, to_date)
             ig_chart(symbol, df.Date, df."Adj Close")
+        finally
+            ig_remove_game(dummy_user_id)
         end
         @info "Completed warm up in $elapsed seconds"
+    catch ex
+        @error "Warm up error: " ex
     end
 end
