@@ -196,7 +196,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:rank}, args)
     length(args) <= 1 ||
         throw(IgUserError("Invalid command. Try `ig rank` or `ig rank 10`"))
 
-    n = length(args) == 0 ? 3 : tryparse(Int, args[1])
+    n = length(args) == 0 ? 5 : tryparse(Int, args[1])
     n !== nothing || throw(IgUserError("invalid rank argument `$(args[1])`. " *
         "Try `ig rank` or `ig rank 10`"))
 
