@@ -30,4 +30,3 @@ const handlers_list = [
 const opt_services_list = [:game_master, :reaction]
 
 # RAW Regex constants
-const RAW_REGEX_SRC_CMD = raw"src( help| discourse| gm| ig| j| react| src| tz)? *(.*)$"
