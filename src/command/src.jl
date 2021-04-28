@@ -1,7 +1,8 @@
 function commander(c::Client, m::Message, ::Val{:source})
     startswith(m.content, COMMAND_PREFIX * "src") || return
 
-    regex = Regex(COMMAND_PREFIX * RAW_REGEX_SRC_CMD)
+    # regex = Regex(COMMAND_PREFIX * raw"src( help| discourse| gm| ig| j| react| src| tz)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"src( help| [a-zA-Z]*)? *(.*)$")
 
     matches = match(regex, m.content)
 
