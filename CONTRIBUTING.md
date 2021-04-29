@@ -57,7 +57,7 @@ For now, you have to restart the bot to test your changes. Ideally, we should ma
 it work with Revise.jl so a restart would be unnecessary, but I (Tom) have been
 too lazy to figure that out.
 
-In order to have a clean restart of the bot, you can create an EMPTY file called
+In order to have a clean restart of the bot, you can create an empty file called
 `SHUTDOWN` in the project directory. If you are using Linux/Mac, you can use the
 touch command from a separate window:
 
@@ -70,7 +70,7 @@ itself. Assuming that you started the bot using the `script/run.sh` script, it
 would pause and let you Ctrl-C to exit completely, or if you wait few more seconds,
 then the script will automatically start the bot again.
 
-Now that the bot has been restarted, you can test that out from Discord.
+Now that the bot has been restarted, you can test your changes from Discord.
 
 ## Learning from examples
 
