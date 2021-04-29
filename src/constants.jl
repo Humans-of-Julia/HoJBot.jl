@@ -28,5 +28,3 @@ const handlers_list = [
 ]
 
 const opt_services_list = [:game_master, :reaction]
-
-# RAW Regex constants
