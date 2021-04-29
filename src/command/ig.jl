@@ -1,3 +1,5 @@
+const QUOTE_CACHE = Cache{String,Float64}(Minute(1))
+
 finnhub_token() = get(ENV, "FINNHUB_TOKEN", "")
 
 function commander(c::Client, m::Message, ::Val{:ig})
@@ -172,7 +174,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
         throw(IgUserError("Invalid command. Try `ig quote aapl` to fetch the current price of Apple Inc."))
 
     symbol = strip(uppercase(args[1]))
-    price = ig_get_quote(symbol)
+    price = ig_get_real_time_quote(symbol)
     discord_reply(c, m, ig_hey(user.username, "the current price of $symbol is " * format_amount(price)))
 end
 
@@ -196,7 +198,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:rank}, args)
     length(args) <= 1 ||
         throw(IgUserError("Invalid command. Try `ig rank` or `ig rank 10`"))
 
-    n = length(args) == 0 ? 3 : tryparse(Int, args[1])
+    n = length(args) == 0 ? 5 : tryparse(Int, args[1])
     n !== nothing || throw(IgUserError("invalid rank argument `$(args[1])`. " *
         "Try `ig rank` or `ig rank 10`"))
 
@@ -334,8 +336,8 @@ function ig_load_all_portfolios()
 end
 
 "Fetch the current quote of a stock"
-@mockable function ig_get_quote(symbol::AbstractString)
-    # startswith(symbol, "CASH:") && return 1.0
+@mockable function ig_get_real_time_quote(symbol::AbstractString)
+    @info "$(now()) real time quote: $symbol"
     token = finnhub_token()
     length(token) > 0 || throw(IgSystemError("No market price provider. Please report to admin."))
     symbol = HTTP.escapeuri(symbol)
@@ -343,7 +345,14 @@ end
     data = JSON3.read(response.body)
     current_price = data.c
     current_price > 0 || throw(IgUserError("there is no price for $symbol. Is it a valid stock symbol?"))
-    return current_price
+    current_price
+end
+
+"Fetch quote of a stock, but possibly with a time delay."
+function ig_get_quote(symbol::AbstractString)
+    return get!(QUOTE_CACHE, symbol) do
+        ig_get_real_time_quote(symbol)
+    end
 end
 
 "Buy stock for a specific user at a specific price."
@@ -351,7 +360,7 @@ function ig_buy(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_get_quote(symbol)
+    current_price::Real = ig_get_real_time_quote(symbol)
 )
     @debug "Buying stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -372,7 +381,7 @@ function ig_sell(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_get_quote(symbol)
+    current_price::Real = ig_get_real_time_quote(symbol)
 )
     @debug "Selling stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
