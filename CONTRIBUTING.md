@@ -34,13 +34,14 @@ Go inside the directory, and run this command to download dependencies.
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 ```
 
-## Testing and making changes
+## Testing
 
 At this point, you can start running the bot.
 
 1. Locate your discord bot token from the Bot screen
 2. Define `HOJBOT_DISCORD_TOKEN` environment variable in your shell profile.
-3. Start the bot using `script/run.sh` script
+3. Define `FINNHUB_TOKEN` environment variable if you are developing for the investment game.
+4. Start the bot using `script/run.sh` script
 
 Then, you can go to your own Discord server and enter some commands
 to see if it's working properly. For example:
@@ -49,9 +50,27 @@ to see if it's working properly. For example:
 ,j? sin
 ```
 
-Now, you can change the source code and test. The easiest way is to make
-a change, kill the program (hitting Ctrl-C, maybe several times), and
-restart the bot.
+## Making changes
+
+Once your bot is up and running, you can start making changes to the source code.
+For now, you have to restart the bot to test your changes. Ideally, we should make
+it work with Revise.jl so a restart would be unnecessary, but I (Tom) have been
+too lazy to figure that out.
+
+In order to have a clean restart of the bot, you can create an EMPTY file called
+`SHUTDOWN` in the project directory. If you are using Linux/Mac, you can use the
+touch command from a separate window:
+
+```
+touch SHUTDOWN
+```
+
+Within few seconds, the bot should detect the file and automatically shut down by
+itself. Assuming that you started the bot using the `script/run.sh` script, it
+would pause and let you Ctrl-C to exit completely, or if you wait few more seconds,
+then the script will automatically start the bot again.
+
+Now that the bot has been restarted, you can test that out from Discord.
 
 ## Learning from examples
 
