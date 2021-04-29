@@ -181,3 +181,18 @@ Return a flip function, either `previous` or `next`, that expects
 argument of type `T`.
 """
 flipper(f::Union{typeof(previous), typeof(next)}, T::Type) = TypedFunction{T}(f)
+
+"""
+    extract_command(command::AbstractString, s::AbstractString)
+
+Extract command by removing the command prefix. For example:
+
+```
+julia> HoJBot.extract_command("j", ",j doc sin")
+"doc sin"
+```
+"""
+function extract_command(command::AbstractString, s::AbstractString)
+    prefix = COMMAND_PREFIX * command
+    return strip(replace(s, Regex("^" * prefix * " *") => ""))
+end
