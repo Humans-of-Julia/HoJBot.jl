@@ -114,8 +114,8 @@ function stats_namescount(
         end
     end
     stats = sort(collect(namescount), by=x->x[2]["count"], rev=true)[1:min(end,number, 100)]
-    header = ifelse(place == "top", "**Top ", "**Bottom ")*"$(min(length(stats),number, 100)) stats**\n"
-    header *= "≡"^(length(header)-8)*"\n__Count__\t__Name__\n"
+    header = ifelse(place == "top", "**Top ", "**Bottom ") * "$(min(length(stats),number, 100)) stats**\n"
+    header *= "≡"^(length(header)-8) * "\n__Count__\t__Name__\n"
     contents = prod(map(s -> "$(s[2]["count"])\t\t\t`$(s[1])`\n", stats))
     return header*contents
 end
