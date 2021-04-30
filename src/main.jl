@@ -59,7 +59,7 @@ end
 function start_bot(;
     commands = active_commands,
     handlers = handlers_list,
-    run_duration = Days(365),  # run for a very long time by default
+    run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
