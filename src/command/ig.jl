@@ -1,7 +1,5 @@
 const QUOTE_CACHE = Cache{String,Float64}(Minute(1))
 
-finnhub_token() = get(ENV, "FINNHUB_TOKEN", "")
-
 function commander(c::Client, m::Message, ::Val{:ig})
     @debug "ig_commander called"
 
@@ -174,7 +172,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
         throw(IgUserError("Invalid command. Try `ig quote aapl` to fetch the current price of Apple Inc."))
 
     symbol = strip(uppercase(args[1]))
-    price = ig_get_real_time_quote(symbol)
+    price = ig_real_time_price(symbol)
     discord_reply(c, m, ig_hey(user.username, "the current price of $symbol is " * format_amount(price)))
 end
 
@@ -335,23 +333,10 @@ function ig_load_all_portfolios()
         for (user_id, file) in zip(user_ids, files))
 end
 
-"Fetch the current quote of a stock"
-@mockable function ig_get_real_time_quote(symbol::AbstractString)
-    @info "$(now()) real time quote: $symbol"
-    token = finnhub_token()
-    length(token) > 0 || throw(IgSystemError("No market price provider. Please report to admin."))
-    symbol = HTTP.escapeuri(symbol)
-    response = HTTP.get("https://finnhub.io/api/v1/quote?symbol=$symbol&token=$token")
-    data = JSON3.read(response.body)
-    current_price = data.c
-    current_price > 0 || throw(IgUserError("there is no price for $symbol. Is it a valid stock symbol?"))
-    return Float64(current_price)
-end
-
 "Fetch quote of a stock, but possibly with a time delay."
 function ig_get_quote(symbol::AbstractString)
     return get!(QUOTE_CACHE, symbol) do
-        ig_get_real_time_quote(symbol)
+        ig_real_time_price(symbol)
     end
 end
 
@@ -360,7 +345,7 @@ function ig_buy(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_get_real_time_quote(symbol)
+    current_price::Real = ig_real_time_price(symbol)
 )
     @debug "Buying stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -381,7 +366,7 @@ function ig_sell(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_get_real_time_quote(symbol)
+    current_price::Real = ig_real_time_price(symbol)
 )
     @debug "Selling stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -539,6 +524,26 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
         else
             rethrow()
         end
+    end
+end
+
+"Return yesterday's EOD pricing data"
+@mockable ig_yesterday_price(symbol::AbstractString) = ig_latest_price(symbol, Day(1))
+
+"Return real-time pricing data"
+@mockable ig_real_time_price(symbol::AbstractString) = ig_latest_price(symbol, Day(0))
+
+# Using Yahoo's historical price query to find the latest price
+# Fortunately, Yahoo also provides real-time prices, so setting offset to Day(0)
+# would return the current price.
+function ig_latest_price(symbol::AbstractString, offset::DatePeriod)
+    to_date = today() - offset
+    from_date = to_date - Day(4)   # account for weekend and holidays
+    df = ig_historical_prices(symbol, from_date, to_date)
+    if nrow(df) >= 1
+        return df[end, "Adj Close"]
+    else
+        return 0.0
     end
 end
 

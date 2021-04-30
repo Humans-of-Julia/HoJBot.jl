@@ -40,8 +40,7 @@ At this point, you can start running the bot.
 
 1. Locate your discord bot token from the Bot screen
 2. Define `HOJBOT_DISCORD_TOKEN` environment variable in your shell profile.
-3. Define `FINNHUB_TOKEN` environment variable if you are developing for the investment game. You can get your own [API key from finnhub.io](https://finnhub.io/).
-4. Start the bot using `script/run.sh` script
+3. Start the bot using `script/run.sh` script
 
 Then, you can go to your own Discord server and enter some commands
 to see if it's working properly. For example:
