@@ -53,12 +53,9 @@ function audit(
     end
 end
 
-function update_namescount(
+function update_names_count(
         source::AbstractString,
         name::AbstractString,
-        user_id::UInt,
-        username::AbstractString,
-        discriminator::AbstractString,
         channel_id::UInt,
         channel_name::AbstractString,
         count_docs_dir = joinpath("data", "docs"),
@@ -71,7 +68,6 @@ function update_namescount(
 
     info = [
         Dict(
-            # "who" => "$username#$discriminator(id:$user_id)",
             "when" => "$(now(tz"UTC"))",
             "where" => "#$channel_name(id:$channel_id)"
         )

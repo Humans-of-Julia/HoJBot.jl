@@ -114,9 +114,8 @@ function handle_julia_help_commander(c::Client, m::Message, name)
         user = @discord retrieve(c, User, m.author.id)
         channel = @discord get_channel(c, m.channel_id)
         if !occursin("No documentation found", doc)
-            count = update_namescount(
+            count = update_names_count(
                 "namescount", name,
-                user.id, user.username, user.discriminator,
                 m.channel_id, channel.name)
             doc *= "\n*(Count number for `$name`: $count)*"
         end
