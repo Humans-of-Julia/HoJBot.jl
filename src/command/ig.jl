@@ -517,7 +517,9 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
     url = "https://query1.finance.yahoo.com/v7/finance/download/$symbol?" *
         "period1=$from_sec&period2=$to_sec&interval=1d&events=history&includeAdjustedClose=true"
     try
-        return DataFrame(CSV.File(Downloads.download(url)))
+        elapsed = @elapsed df = DataFrame(CSV.File(Downloads.download(url)))
+        @info "ig_historical_prices" symbol from_date to_date elapsed
+        return df
     catch ex
         if ex isa Downloads.RequestError && ex.response.status == 404
             throw(IgUserError("there is no historical prices for $symbol. Is it a valid stock symbol?"))
