@@ -68,7 +68,7 @@ function start_bot(;
     init_handlers!(client, handlers)
     init_commands!(client, commands)
     # add_help!(client; help = help_message())
-    warm_up()
+    warm_up_enabled() && warm_up()
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
@@ -193,6 +193,10 @@ function opt_out(c::Client, m::Message, service)
             """
         )
     end
+end
+
+function warm_up_enabled()
+    return get(ENV, "ENABLE_WARM_UP", "1") in ("1", "Y", "YES")
 end
 
 # TODO use SnoopCompile to find precompile methods
