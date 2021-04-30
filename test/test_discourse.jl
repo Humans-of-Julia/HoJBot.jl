@@ -7,7 +7,7 @@ import JSON3
 
 @testset "discourse" begin
 
-    json = discourse_run_query("pluto")
+    json = discourse_run_query("search.json", "pluto")
 
     let
         @test json isa JSON3.Object
