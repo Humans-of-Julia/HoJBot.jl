@@ -345,7 +345,7 @@ end
     data = JSON3.read(response.body)
     current_price = data.c
     current_price > 0 || throw(IgUserError("there is no price for $symbol. Is it a valid stock symbol?"))
-    current_price
+    return Float64(current_price)
 end
 
 "Fetch quote of a stock, but possibly with a time delay."
