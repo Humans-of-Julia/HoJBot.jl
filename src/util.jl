@@ -68,8 +68,9 @@ function update_names_count(
 
     info = [
         Dict(
-            "when" => "$(now(tz"UTC"))",
-            "where" => "#$channel_name(id:$channel_id)"
+            "when" => """$(now(tz"UTC"))""",
+            "channel" => "$channel_name",
+            "channel_id" => "$channel_id"
         )
     ]
 
