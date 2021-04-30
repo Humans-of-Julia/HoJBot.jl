@@ -109,8 +109,8 @@ function stats_namescount(
             return "The docstring for `$name` has not been looked upon yet."
         end
     end
-    stats = sort(collect(namescount), by=x->x[2]["count"], rev=true)[1:min(end,number, 100)]
-    header = ifelse(place == "top", "**Top ", "**Bottom ") * "$(min(length(stats),number, 100)) stats**\n"
+    stats = sort(collect(namescount), by=x->x[2]["count"], rev=true)[1:min(end, number, 100)]
+    header = ifelse(place == "top", "**Top ", "**Bottom ") * "$(min(length(stats), number, 100)) stats**\n"
     header *= "≡"^(length(header)-8) * "\n__Count__\t__Name__\n"
     contents = prod(map(s -> "$(s[2]["count"])\t\t\t`$(s[1])`\n", stats))
     return header * contents
