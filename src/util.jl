@@ -56,7 +56,7 @@ end
 function update_names_count(
         source::AbstractString,
         name::AbstractString,
-        channel_id::UInt,
+        channel_id::UInt64,
         channel_name::AbstractString,
         count_docs_dir = joinpath("data", "docs"),
         count_names_file = joinpath(count_docs_dir, "$source.json")
