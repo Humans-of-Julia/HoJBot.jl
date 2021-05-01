@@ -6,11 +6,6 @@ if [[ -z "$HOJBOT_DISCORD_TOKEN" ]]; then
     exit 1
 fi
 
-if [[ -z "$FINNHUB_TOKEN" ]]; then
-    echo "Warning: FINNHUB_TOKEN must be set for investment game to function properly."
-    echo "  Get your own token at https://finnhub.io/"
-fi
-
 # Default environment settings
 : ${RUN_ONCE=no}
 : ${RUN_DURATION_MINUTES=2880}

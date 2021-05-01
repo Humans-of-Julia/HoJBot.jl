@@ -30,7 +30,7 @@ end
 function start_bot(;
     commands=ACTIVE_COMMANDS,
     handlers=HANDLERS_LIST,
-    run_duration=Days(365),  # run for a very long time by default
+    run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(
@@ -41,7 +41,7 @@ function start_bot(;
     init_handlers!(client, handlers)
     init_commands!(client, commands)
     # add_help!(client; help = help_message())
-    warm_up()
+    warm_up_enabled() && warm_up()
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
@@ -179,10 +179,14 @@ function opt_out(c::Client, m::Message, service)
     end
 end
 
+function warm_up_enabled()
+    return get(ENV, "ENABLE_WARM_UP", "1") in ("1", "Y", "YES")
+end
+
 # TODO use SnoopCompile to find precompile methods
 function warm_up()
     @info "Warming up..."
-    Threads.@spawn try
+    Threads.@spawn begin
         dummy_user_id = UInt64(0)
         elapsed = @elapsed try
             symbol = "AAPL"
@@ -196,11 +200,12 @@ function warm_up()
             from_date, to_date = Date(2020, 1, 1), Date(2020, 12, 31)
             df = ig_historical_prices(symbol, from_date, to_date)
             ig_chart(symbol, df.Date, df."Adj Close")
+        catch ex
+            @error "Warm up error: " ex
+            Base.showerror(stdout, ex, catch_backtrace())
         finally
             ig_remove_game(dummy_user_id)
         end
         @info "Completed warm up in $elapsed seconds"
-    catch ex
-        @error "Warm up error: " ex
     end
 end

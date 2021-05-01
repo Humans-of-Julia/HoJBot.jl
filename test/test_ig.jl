@@ -12,7 +12,7 @@ using HoJBot:
     recent_date_range, retrieve, retrieve_users, upload_file,
     ig_affirm_non_player, ig_affirm_player,
     ig_buy, ig_cash_entry, ig_chart, ig_count_shares, ig_execute,
-    ig_file_path, ig_get_quote, ig_grouped_holdings, ig_hey,
+    ig_file_path, ig_real_time_price, ig_grouped_holdings, ig_hey,
     ig_historical_prices, ig_holdings_data_frame, ig_is_player,
     ig_load_all_portfolios, ig_load_portfolio, ig_mark_to_market!,
     ig_mark_to_market_portfolio, ig_ranking_table,
@@ -92,7 +92,7 @@ mocked_client() = Client("hey")
     end
 
     test_ig_cases("Buy/sell") do
-        apply(ig_get_quote => mock_ig_get_quote_100) do
+        apply(ig_real_time_price => mock_ig_get_quote_100) do
             # Buy something, portfolio should be updated
             executed_price = @test_nowarn ig_buy(USER_ID, "AAPL", 50)
             @test executed_price == 100.0
@@ -165,7 +165,7 @@ mocked_client() = Client("hey")
 
         # mark to market
         df2 = copy(df)
-        apply(ig_get_quote => mock_ig_get_quote_100) do
+        apply(ig_real_time_price => mock_ig_get_quote_100) do
             @test_nowarn ig_mark_to_market!(df2)
             @test hasproperty(df2, :current_price)
             @test hasproperty(df2, :market_value)
@@ -192,7 +192,7 @@ mocked_client() = Client("hey")
         ig_buy(USER_ID2, "AAPL", 100, 120)  # bought at higher price i.e. less cash remaining
         ig_buy(USER_ID2, "IBM", 100, 120)
         apply(
-            ig_get_quote => mock_ig_get_quote_100,
+            ig_real_time_price => mock_ig_get_quote_100,
             retrieve_users => mock_retrieve_users,
         ) do
             valuations = @test_nowarn ig_value_all_portfolios()
@@ -215,7 +215,7 @@ mocked_client() = Client("hey")
             discord_channel => mock_channel,
             discord_reply => mock_reply,
             discord_upload_file => mock_upload_file,
-            ig_get_quote => mock_ig_get_quote_100,
+            ig_real_time_price => mock_ig_get_quote_100,
             retrieve_users => mock_retrieve_users,
         ) do
             @test_nowarn ig_execute(c, m, u, Val(Symbol("start-game")), [])

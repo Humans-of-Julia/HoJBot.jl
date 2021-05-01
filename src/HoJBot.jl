@@ -7,6 +7,7 @@ using DataFrames
 using Dates
 using Discord
 using Downloads
+using ExpiringCaches
 using Formatting
 using JSON
 using OrderedCollections
@@ -15,6 +16,7 @@ using Pretend
 using PrettyTables
 using TimeZones
 using UUIDs
+using Pkg
 
 import HTTP
 import JSON3
