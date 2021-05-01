@@ -1,4 +1,4 @@
-const filtered_active_cmds = keys((filter(check -> last(check) == true, active_commands)))
+const filtered_active_cmds = keys((filter(check -> last(check) == true, ACTIVE_COMMANDS)))
 
 function commander(c::Client, m::Message, ::Val{:source})
     startswith(m.content, COMMAND_PREFIX * "src") || return
@@ -22,17 +22,18 @@ function commander(c::Client, m::Message, ::Val{:source})
 end
 
 function help_commander(c::Client, m::Message, ::Val{:source})
-    list_commands =
-    join(sort([string("src", " ", cmd, "\n") for cmd in filtered_active_cmds]))
-    return reply(
+    list_commands = join(sort([
+        string("src", " ", cmd, "\n") for cmd in filtered_active_cmds
+    ]))
+    reply(
         c, m, """
-     Returns the source file of the command.
-     Usage: `src <command>`
-     List of available commands:
-     ```
-     $(list_commands)
-     ```
-     `src` or `src help` returns help
-     """
+        Returns the source file of the command.
+        Usage: `src <command>`
+        List of available commands:
+        ```
+        $(list_commands)
+        ```
+        `src` or `src help` returns help
+        """
     )
 end
