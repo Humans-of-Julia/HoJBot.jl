@@ -9,7 +9,7 @@ function commander(c::Client, m::Message, ::Val{:ig})
 
     if length(args) == 0 ||
             args[1] ∉ ["start-game", "abandon-game", "quote", "chart",
-                "buy", "sell", "perf", "rank", "view", "gl",
+                "buy", "sell", "perf", "rank", "view", "gl", "hist",
                 "abandon-game-really"]
         help_commander(c, m, :ig)
         return
@@ -51,6 +51,7 @@ function help_commander(c::Client, m::Message, ::Val{:ig})
         ig view                - view holdings and current market values
         ig perf                - compare with yesterday's EOD prices
         ig gl                  - gain/loss view of your current portfolio
+        ig hist [<symbol>]     - purchase history
         ```
         How are you doing?
         ```
@@ -180,6 +181,34 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:gl}, args)
     return nothing
 end
 
+function ig_execute(c::Client, m::Message, user::User, ::Val{:hist}, args)
+    ig_affirm_player(user.id)
+    if length(args) >= 1 
+        symbol = uppercase(args[1])
+        clause = " of $symbol"
+    else 
+        symbol = nothing
+        clause = ""
+    end
+
+    df = ig_hist(user.id, symbol)
+    if nrow(df) > 0
+        table = pretty_table(String, df; header = names(df))
+        discord_reply(
+            c, m,
+            ig_hey(user.username, """here is the purchase history$clause:
+                ```
+                $table
+                ```
+                """
+            )
+        )
+    else
+        discord_reply(c, m, ig_hey(user.username, "no purchase history was found."))
+    end
+    return nothing
+end
+
 "Return a data frame with daily performance of user's current holdings."
 function ig_perf(user_id::UInt64)
     pf = ig_load_portfolio(user_id)
@@ -214,6 +243,23 @@ function ig_gain_loss(user_id::UInt64)
     df.shares = round.(Int, df.shares)
 
     return df
+end
+
+"Return a data frame with the purchase history of current holdings."
+function ig_hist(user_id::UInt64, symbol::Optional{AbstractString})
+    pf = ig_load_portfolio(user_id)
+    df = ig_holdings_data_frame(pf)
+    if symbol !== nothing
+        filter!(:symbol => ==(symbol), df)
+    end
+    
+    df.shares = round.(Int, df.shares)
+    rename!(df, "purchase_price" => "px_buy")
+    rename!(df, "purchase_date" => "date")
+
+    sort!(df, [:symbol, :date, :px_buy])
+
+    return df[!, [:symbol, :date, :px_buy, :shares]]
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
