@@ -1,7 +1,7 @@
 # Main constants
 const BOT_REPO_URL = "https://github.com/Humans-of-Julia/HoJBot.jl"
 
-const active_commands = LittleDict([
+const ACTIVE_COMMANDS = LittleDict([
     :gm => false,
     :ig => true,
     :j => true,
@@ -11,7 +11,7 @@ const active_commands = LittleDict([
     :src => true,
 ])
 
-const commands_names = LittleDict([
+const COMMANDS_NAMES = LittleDict([
     :gm => :game_master,
     :ig => :ig,
     :j => :julia_doc,
@@ -21,10 +21,10 @@ const commands_names = LittleDict([
     :src => :source,
 ])
 
-const handlers_list = [
+const HANDLERS_LIST = [
     (:reaction, MessageCreate, true),
     (:whistle, MessageReactionAdd, true),
     (:discourse, MessageReactionAdd, true),
 ]
 
-const opt_services_list = [:game_master, :reaction]
+const OPT_SERVICES_LIST = [:game_master, :reaction]
