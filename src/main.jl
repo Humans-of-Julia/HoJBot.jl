@@ -9,11 +9,11 @@ function __init__()
 end
 
 function help_message()
-    act_commands = collect(keys(filter(c -> c.second, active_commands)))
-    names = collect(values(filter(c -> active_commands[c.first], commands_names)))
+    act_commands = collect(keys(filter(c -> c.second, ACTIVE_COMMANDS)))
+    names = collect(values(filter(c -> ACTIVE_COMMANDS[c.first], COMMANDS_NAMES)))
 
     commands = mapreduce(c -> string(c) * "\n", *, act_commands)
-    opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, opt_services_list))
+    opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, OPT_SERVICES_LIST))
     str = """
     ```
     HoJBot accepts the following commands:
@@ -28,8 +28,8 @@ function help_message()
 end
 
 function start_bot(;
-    commands=active_commands,
-    handlers=handlers_list,
+    commands=ACTIVE_COMMANDS,
+    handlers=HANDLERS_LIST,
     run_duration=Days(365),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
@@ -44,7 +44,7 @@ function start_bot(;
     warm_up()
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
-    return wait(client)
+    wait(client)
 end
 
 function init_handlers!(client::Client, handlers)
@@ -55,7 +55,7 @@ end
 
 function init_commands!(client::Client, commands)
     for (com, active) in commands
-        active && add_command!(client, com, (c, m) -> commander(c, m, commands_names[com]))
+        active && add_command!(client, com, (c, m) -> commander(c, m, COMMANDS_NAMES[com]))
     end
 end
 
@@ -89,7 +89,7 @@ function shutdown_gracefully(c::Client)
         @warn "Unable to close client connection" ex
     end
     sleep(1)
-    return exit(0)
+    exit(0)
 end
 
 commander(c::Client, m::Message, service) = begin
@@ -106,7 +106,7 @@ function get_opt(username, discriminator)
 end
 
 function get_opt!(username, discriminator, service)
-    return get!(get_opt(username, discriminator), string(service), false)
+    get!(get_opt(username, discriminator), string(service), false)
 end
 
 function set_opt!(username, discriminator, service, value)
@@ -114,13 +114,13 @@ function set_opt!(username, discriminator, service, value)
     opt[string(service)] = value
     user = username * "_" * discriminator
     path = joinpath(pwd(), "data", "opt", user)
-    return write(path, json(opt))
+    write(path, json(opt))
 end
 
 function opt_in(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    if service ∉ opt_services_list
+    if service ∉ OPT_SERVICES_LIST
         reply(
             c,
             m,
@@ -151,7 +151,7 @@ end
 function opt_out(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    if service ∉ opt_services_list
+    if service ∉ OPT_SERVICES_LIST
         reply(
             c,
             m,
