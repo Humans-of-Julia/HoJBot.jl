@@ -165,7 +165,7 @@ end
 
 function ig_perf(user_id::UInt64)
     pf = ig_load_portfolio(user_id)
-    symbols = unique([h.symbol for h in pf.holdings])
+    symbols = unique(h.symbol for h in pf.holdings)
     prices_yesterday = fetch.(@async(ig_yesterday_price(s)) for s in symbols)
     prices_today = fetch.(@async(ig_get_quote(s)) for s in symbols)
     prices_change = prices_today .- prices_yesterday
