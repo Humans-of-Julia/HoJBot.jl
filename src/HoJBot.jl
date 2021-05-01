@@ -16,6 +16,7 @@ using Pretend
 using PrettyTables
 using TimeZones
 using UUIDs
+using Pkg
 
 import HTTP
 import JSON3

@@ -53,6 +53,69 @@ function audit(
     end
 end
 
+function update_names_count(
+        source::AbstractString,
+        name::AbstractString,
+        channel_id::UInt64,
+        channel_name::AbstractString,
+        count_docs_dir = joinpath("data", "docs"),
+        count_names_file = joinpath(count_docs_dir, "$source.json")
+    )
+    
+    mkpath(count_docs_dir)
+    isfile(count_names_file) || write(count_names_file, "{}")
+    namescount = JSON.parsefile(count_names_file)
+
+    info = [
+        Dict(
+            "when" => """$(now(tz"UTC"))""",
+            "channel" => "$channel_name",
+            "channel_id" => "$channel_id"
+        )
+    ]
+
+    if name in keys(namescount)
+        namescount[name]["count"] += 1
+        append!(
+            namescount[name]["info"], info
+        )
+    else
+        push!(
+            namescount, 
+                name => Dict(
+                    "count" => 1,
+                    "info" => info
+                )
+        )
+    end
+    write(count_names_file, JSON.json(namescount, 4))
+    return namescount[name]["count"]
+end
+
+function stats_namescount(
+        source::AbstractString;
+        place::AbstractString = "top",
+        number::Int = 20,
+        name::AbstractString = "",
+        count_docs_dir = joinpath("data", "docs"),
+        count_names_file = joinpath(count_docs_dir, "$source.json")
+    )
+
+    isfile(count_names_file) || return "Sorry, no stats found."
+    namescount = JSON.parsefile(count_names_file)
+    if length(name) > 0
+        if name in keys(namescount)
+            return "The docstring for `$name` has been looked upon $(namescount[name]["count"]) times!"
+        else
+            return "The docstring for `$name` has not been looked upon yet."
+        end
+    end
+    stats = sort(collect(namescount), by=x->x[2]["count"], rev=true)[1:min(end, number, 100)]
+    header = ifelse(place == "top", "**Top ", "**Bottom ") * "$(min(length(stats), number, 100)) stats**\n"
+    header *= "≡"^(length(header)-8) * "\n__Count__\t__Name__\n"
+    contents = prod(map(s -> "$(s[2]["count"])\t\t\t`$(s[1])`\n", stats))
+    return header * contents
+end
 # Convenient Discord functions
 
 """
