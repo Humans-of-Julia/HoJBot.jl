@@ -21,11 +21,13 @@ const NO_REACTION = Char[]
 
 const REACT_WORDS = Dict(
     :happy => [
-        "happy", "nice", "great", "awesome", "cheers", "yay", "congrat",
-        "it helped", "appreciate", "noice", "thank"
+        "happy", "nice", "great", "awesome", "cheers", "yay", 
+        "congrat", "congrats", "congratulations",
+        "it helped", "it helps", "appreciate", "appreciated", "noice",
+        "thank", "thanks",
     ],
     :disappointed => [
-        "disappointed", "unhappy", "sad", "aw shucks", "yeow"
+        "disappointed", "unhappy", "sad", "aw shucks", "yeow",
     ],
     :excited => [
         "excited", "fantastic", "fabulous", "wonderful",
@@ -35,10 +37,10 @@ const REACT_WORDS = Dict(
     :goodbye => [
         "cya", "bye", "goodbye", "ciao", "adios", "brb"
     ],
-    :dog => ["dog", "doggie", "shiba", "corgi", "chihuahua", "retriever"],
-    :cat => ["cat", "feline", "kitten"],
-    :snake => ["snake", "rattle", "python"],
-    :crab => ["crab", "rust"],
+    :dog => ["dog", "dogs", "doggie", "shiba", "corgi", "chihuahua", "retriever"],
+    :cat => ["cat", "cats", "feline", "kitten", "kittens"],
+    :snake => ["snake", "snakes", "rattle", "python", "pythons"],
+    :crab => ["crab", "crabs", "rust"],
 ) 
 
 function contains_any(s::AbstractString, words::AbstractVector{String})
