@@ -25,8 +25,11 @@ function help_commander(c::Client, m::Message, ::Val{:source})
     list_commands = join(sort([
         string("src", " ", cmd, "\n") for cmd in filtered_active_cmds
     ]))
+
     reply(
-        c, m, """
+        c, 
+        m, 
+        """
         Returns the source file of the command.
         Usage: `src <command>`
         List of available commands:
