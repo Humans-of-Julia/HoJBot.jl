@@ -1,7 +1,5 @@
 const QUOTE_CACHE = Cache{String,Float64}(Minute(1))
 
-finnhub_token() = get(ENV, "FINNHUB_TOKEN", "")
-
 function commander(c::Client, m::Message, ::Val{:ig})
     @debug "ig_commander called"
 
@@ -11,7 +9,7 @@ function commander(c::Client, m::Message, ::Val{:ig})
 
     if length(args) == 0 ||
             args[1] ∉ ["start-game", "abandon-game", "quote", "chart",
-                "buy", "sell", "rank", "view",
+                "buy", "sell", "perf", "rank", "view",
                 "abandon-game-really"]
         help_commander(c, m, :ig)
         return
@@ -49,6 +47,7 @@ function help_commander(c::Client, m::Message, ::Val{:ig})
         Manage portfolio:
         ```
         ig view                - view holdings and current market values
+        ig perf                - compare with yesterday's EOD prices
         ig buy <n> <symbol>    - buy <n> shares of a stock
         ig sell <n> <symbol>   - sell <n> shares of a stock
         ```
@@ -99,6 +98,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("start-game"
     pf = ig_start_new_game(user.id)
     discord_reply(c, m, ig_hey(user.username, "you have \$" * format_amount(pf.cash) *
         " in your shiny new portfolio now! Good luck!"))
+    return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("abandon-game")}, args)
@@ -106,6 +106,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("abandon-gam
     discord_reply(c, m, ig_hey(user.username,
         "do you REALLY want to abandon the game and wipe out all of your data? " *
         "If so, type `ig abandon-game-really`."))
+    return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("abandon-game-really")}, args)
@@ -113,6 +114,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("abandon-gam
     ig_remove_game(user.id)
     discord_reply(c, m, ig_hey(user.username,
         "your investment game is now over. Play again soon!"))
+    return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:buy}, args)
@@ -127,6 +129,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:buy}, args)
     purchase_price = ig_buy(user.id, symbol, shares)
     discord_reply(c, m, ig_hey(user.username, "you have bought $shares shares of $symbol at \$" *
         format_amount(purchase_price)))
+    return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:sell}, args)
@@ -141,6 +144,42 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:sell}, args)
     current_price = ig_sell(user.id, symbol, shares)
     discord_reply(c, m, ig_hey(user.username, "you have sold $shares shares of $symbol at \$" *
         format_amount(current_price)))
+    return nothing
+end
+
+function ig_execute(c::Client, m::Message, user::User, ::Val{:perf}, args)
+    ig_affirm_player(user.id)
+    df = ig_perf(user.id)
+    table = pretty_table(String, df; header = names(df))
+    discord_reply(
+        c, m,
+        ig_hey(user.username, """your stocks' performance today:
+            ```
+            $table
+            ```
+            """
+        )
+    )
+    return nothing
+end
+
+function ig_perf(user_id::UInt64)
+    pf = ig_load_portfolio(user_id)
+    symbols = [h.symbol for h in pf.holdings]
+    prices_yesterday = fetch.(@async(ig_yesterday_price(s)) for s in symbols)
+    prices_today = fetch.(@async(ig_get_quote(s)) for s in symbols)
+    prices_change = prices_today .- prices_yesterday
+    prices_change_pct = prices_change ./ prices_yesterday * 100
+    df = DataFrame(
+        symbol = symbols,
+        px_eod = prices_yesterday,
+        px_now = prices_today, 
+        chg = round.(prices_change; digits = 2), 
+        pct_chg = round.(prices_change_pct; digits = 1),
+    )
+    rename!(df, "pct_chg" => "% chg")
+    sort!(df, :symbol)
+    return df
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
@@ -153,20 +192,26 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
     table = ig_view_table(view, df)
     total_str = format_amount(round(Int, sum(df.amount)))
 
-    discord_reply(c, m, ig_hey(user.username,
-        """
-        here is your portfolio:
-        ```
-        $table
-        ```
-        Total portfolio Value: $total_str
-        """))
+    discord_reply(
+        c, m, 
+        ig_hey(user.username,
+            """
+            here is your portfolio:
+            ```
+            $table
+            ```
+            Total portfolio Value: $total_str
+            """
+        )
+    )
+    return nothing
 end
 
 # Shorten colummn headings for better display in Discord
 function ig_reformat_view!(df::AbstractDataFrame)
     select!(df, Not(:purchase_price))
     rename!(df, "current_price" => "price", "market_value" => "amount")
+    return df
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
@@ -174,8 +219,9 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
         throw(IgUserError("Invalid command. Try `ig quote aapl` to fetch the current price of Apple Inc."))
 
     symbol = strip(uppercase(args[1]))
-    price = ig_get_real_time_quote(symbol)
+    price = ig_real_time_price(symbol)
     discord_reply(c, m, ig_hey(user.username, "the current price of $symbol is " * format_amount(price)))
+    return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:chart}, args)
@@ -192,6 +238,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:chart}, args)
         content = ig_hey(user.username, "here is the chart for $symbol for the past $lookback. " *
             "To plot a chart with different time horizon, " *
             "try something like `ig chart $symbol 90d` or `ig chart $symbol 10y`."))
+    return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:rank}, args)
@@ -206,11 +253,16 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:rank}, args)
     rt = rt[1:min(n, nrow(rt)), :]  # get top N results
     rt_str = ig_view_table(PrettyView(), rt)
 
-    discord_reply(c, m, ig_hey(user.username, """here's the current ranking:
-    ```
-    $rt_str
-    ```
-    """))
+    discord_reply(
+        c, m,
+        ig_hey(user.username, """here's the current ranking:
+            ```
+            $rt_str
+            ```
+            """
+        )
+    )
+    return nothing
 end
 
 function ig_ranking_table(c::Client)
@@ -224,6 +276,7 @@ function ig_ranking_table(c::Client)
             player = [users_dict[v.id].username for v in valuations],
             portfolio_value = [v.total for v in valuations],
         )
+        return df
     else
         return DataFrame(player = String[], portfolio_value = Float64[])
     end
@@ -249,7 +302,7 @@ function ig_value_all_portfolios()
     end
     sort!(valuations; lt = (x,y) -> x.total < y.total, rev = true)
     # @info "ig_value_all_portfolios result" valuations
-    valuations
+    return valuations
 end
 
 "Format money amount"
@@ -335,23 +388,10 @@ function ig_load_all_portfolios()
         for (user_id, file) in zip(user_ids, files))
 end
 
-"Fetch the current quote of a stock"
-@mockable function ig_get_real_time_quote(symbol::AbstractString)
-    @info "$(now()) real time quote: $symbol"
-    token = finnhub_token()
-    length(token) > 0 || throw(IgSystemError("No market price provider. Please report to admin."))
-    symbol = HTTP.escapeuri(symbol)
-    response = HTTP.get("https://finnhub.io/api/v1/quote?symbol=$symbol&token=$token")
-    data = JSON3.read(response.body)
-    current_price = data.c
-    current_price > 0 || throw(IgUserError("there is no price for $symbol. Is it a valid stock symbol?"))
-    return Float64(current_price)
-end
-
 "Fetch quote of a stock, but possibly with a time delay."
 function ig_get_quote(symbol::AbstractString)
     return get!(QUOTE_CACHE, symbol) do
-        ig_get_real_time_quote(symbol)
+        ig_real_time_price(symbol)
     end
 end
 
@@ -360,7 +400,7 @@ function ig_buy(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_get_real_time_quote(symbol)
+    current_price::Real = ig_real_time_price(symbol)
 )
     @debug "Buying stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -381,7 +421,7 @@ function ig_sell(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_get_real_time_quote(symbol)
+    current_price::Real = ig_real_time_price(symbol)
 )
     @debug "Selling stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -475,7 +515,7 @@ end
 
 "Add columns with current price and market value"
 function ig_mark_to_market!(df::AbstractDataFrame)
-    df.current_price = [ig_get_quote(s) for s in df.symbol]
+    df.current_price = fetch.(@async(ig_get_quote(s)) for s in df.symbol)
     df.market_value = df.shares .* df.current_price
     return df
 end
@@ -532,13 +572,35 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
     url = "https://query1.finance.yahoo.com/v7/finance/download/$symbol?" *
         "period1=$from_sec&period2=$to_sec&interval=1d&events=history&includeAdjustedClose=true"
     try
-        return DataFrame(CSV.File(Downloads.download(url)))
+        elapsed = @elapsed df = DataFrame(CSV.File(Downloads.download(url)))
+        @debug "ig_historical_prices" symbol from_date to_date elapsed
+        return df
     catch ex
         if ex isa Downloads.RequestError && ex.response.status == 404
             throw(IgUserError("there is no historical prices for $symbol. Is it a valid stock symbol?"))
         else
             rethrow()
         end
+    end
+end
+
+"Return yesterday's EOD pricing data"
+@mockable ig_yesterday_price(symbol::AbstractString) = ig_latest_price(symbol, Day(1))
+
+"Return real-time pricing data"
+@mockable ig_real_time_price(symbol::AbstractString) = ig_latest_price(symbol, Day(0))
+
+# Using Yahoo's historical price query to find the latest price
+# Fortunately, Yahoo also provides real-time prices, so setting offset to Day(0)
+# would return the current price.
+function ig_latest_price(symbol::AbstractString, offset::DatePeriod)
+    to_date = today() - offset
+    from_date = to_date - Day(4)   # account for weekend and holidays
+    df = ig_historical_prices(symbol, from_date, to_date)
+    if nrow(df) >= 1
+        return df[end, "Adj Close"]
+    else
+        return 0.0
     end
 end
 
