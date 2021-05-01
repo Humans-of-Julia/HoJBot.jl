@@ -1,4 +1,4 @@
-const filtered_active_cmds = keys((filter(check -> last(check) == true, ACTIVE_COMMANDS)))
+const FILTERED_ACTIVE_CMDS = keys((filter(check -> last(check) == true, ACTIVE_COMMANDS)))
 
 function commander(c::Client, m::Message, ::Val{:source})
     startswith(m.content, COMMAND_PREFIX * "src") || return
@@ -11,7 +11,7 @@ function commander(c::Client, m::Message, ::Val{:source})
         help_commander(c, m, :source)
     else
         command = lowercase(strip(matches.captures[1]))
-        if Symbol(command) ∈ filtered_active_cmds
+        if Symbol(command) ∈ FILTERED_ACTIVE_CMDS
             msg = string(BOT_REPO_URL, "/blob/main/src/command/", command, ".jl")
             reply(c, m, msg)
         else
@@ -23,7 +23,7 @@ end
 
 function help_commander(c::Client, m::Message, ::Val{:source})
     list_commands = join(sort([
-        string("src", " ", cmd, "\n") for cmd in filtered_active_cmds
+        string("src", " ", cmd, "\n") for cmd in FILTERED_ACTIVE_CMDS
     ]))
 
     reply(
