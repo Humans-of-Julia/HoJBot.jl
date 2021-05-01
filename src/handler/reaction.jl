@@ -19,17 +19,40 @@ const NO_REACTION = Char[]
 # Reactors
 # ----------------------------------------------------------------------
 
+const REACT_WORDS = Dict(
+    :happy => [
+        "happy", "nice", "great", "awesome", "cheers", "yay", "congrat",
+        "it helped", "appreciate", "noice", "thank"
+    ],
+    :disappointed => [
+        "disappointed", "unhappy", "sad", "aw shucks", "yeow"
+    ],
+    :excited => [
+        "excited", "fantastic", "fabulous", "wonderful",
+        "looking forward to", "love", "learned", "saved me", 
+        "beautiful"
+    ],
+    :goodbye => [
+        "cya", "bye", "goodbye", "ciao", "adios", "brb"
+    ],
+    :dog => ["dog", "doggie", "shiba", "corgi", "chihuahua", "retriever"],
+    :cat => ["cat", "feline", "kitten"],
+    :snake => ["snake", "rattle", "python"],
+    :crab => ["crab", "rust"],
+) 
+
 function contains_any(s::AbstractString, words::AbstractVector{String})
-    return any(occursin.(lowercase.(words), s))
+    is_thing(x) = x !== nothing
+    regexes = [Regex("\\b" * w * "\\b") for w in words]
+    matches = match.(regexes, lowercase(s))
+    return any(is_thing(x) for x in matches)
 end
 
 struct HappyReactor <: AbstractReactor end
 
 function reactions(::HappyReactor, m::Message)
-    words = ["happy", "nice", "great", "awesome", "cheers", "yay", "congrat",
-        "it helped", "appreciate", "noice", "thank"]
-    except = ["unhappy"]
-    if contains_any(m.content, words) && !contains_any(m.content, except)
+    if contains_any(m.content, REACT_WORDS[:happy]) && 
+            !contains_any(m.content, REACT_WORDS[:disappointed])
         return ['😄']
     end
     return NO_REACTION
@@ -38,8 +61,9 @@ end
 struct DisappointedReactor <: AbstractReactor end
 
 function reactions(::DisappointedReactor, m::Message)
-    words = ["disappointed", "unhappy", "sad", "aw shucks", "yeow"]
-    if contains_any(m.content, words)
+    if contains_any(m.content, REACT_WORDS[:disappointed]) && 
+        !contains_any(m.content, REACT_WORDS[:happy]) &&
+        !contains_any(m.content, REACT_WORDS[:excited])
         return ['😞']
     end
     return NO_REACTION
@@ -48,9 +72,8 @@ end
 struct ExcitedReactor <: AbstractReactor end
 
 function reactions(::ExcitedReactor, m::Message)
-    words = ["excited", "fantastic", "fabulous", "wonderful", "looking forward to",
-        "love", "learned", "saved me", "beautiful"]
-    if contains_any(m.content, words)
+    if contains_any(m.content, REACT_WORDS[:excited]) &&
+            !contains_any(m.content, REACT_WORDS[:disappointed])
         return ['🤩']
     end
     return NO_REACTION
@@ -59,8 +82,7 @@ end
 struct GoodbyeReactor <: AbstractReactor end
 
 function reactions(::GoodbyeReactor, m::Message)
-    words = ["cya", "bye", "goodbye", "ciao", "adios", "brb"]
-    if contains_any(m.content, words)
+    if contains_any(m.content, REACT_WORDS[:goodbye])
         return ['👋']
     end
     return NO_REACTION
@@ -69,14 +91,20 @@ end
 struct AnimalReactor <: AbstractReactor end
 
 function reactions(::AnimalReactor, m::Message)
-    if contains_any(m.content, ["shiba", "corgi", "chihuahua", "retriever"])
-        return ["🐕"]
-    elseif contains_any(m.content, ["kitten"])
-        return ["🐈"]
-    elseif contains_any(m.content, ["snake"])
-        return ["🐍"]
+    result = Char[]
+    if contains_any(m.content, REACT_WORDS[:dog])
+        push!(result, '🐕')
     end
-    return NO_REACTION
+    if contains_any(m.content, REACT_WORDS[:cat])
+        push!(result, '🐈')
+    end
+    if contains_any(m.content, REACT_WORDS[:snake])
+        push!(result, '🐍')
+    end
+    if contains_any(m.content, REACT_WORDS[:crab])
+        push!(result, '🦀')
+    end
+    return result
 end
 
 # ----------------------------------------------------------------------
