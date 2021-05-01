@@ -1,11 +1,11 @@
-CITY_ALIASES = Dict(
+const CITY_ALIASES = Dict(
     "LA" => "America/Los_Angeles",
     "NY" => "America/New_York",
     "Rio" => "America/Fortaleza",
     "Brussels" => "Europe/Brussels",
 )
 
-DATE_TIME_PATTERNS = (
+const DATE_TIME_PATTERNS = (
     dateformat"yyyy-mm-dd HH:MM",
     dateformat"yyyy-mm-dd HH:MMp", # AM/PM
 )
