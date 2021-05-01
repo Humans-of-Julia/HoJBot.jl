@@ -193,3 +193,6 @@ function extract_command(command::AbstractString, s::AbstractString)
     prefix = COMMAND_PREFIX * command
     return strip(replace(s, Regex("^" * prefix * " *") => ""))
 end
+
+# TODO move to constants.jl later
+const Optional{T} = Union{T, Nothing}
