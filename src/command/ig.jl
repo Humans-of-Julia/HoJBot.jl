@@ -9,7 +9,7 @@ function commander(c::Client, m::Message, ::Val{:ig})
 
     if length(args) == 0 ||
             args[1] ∉ ["start-game", "abandon-game", "quote", "chart",
-                "buy", "sell", "perf", "rank", "view",
+                "buy", "sell", "perf", "rank", "view", "gl",
                 "abandon-game-really"]
         help_commander(c, m, :ig)
         return
@@ -46,10 +46,11 @@ function help_commander(c::Client, m::Message, ::Val{:ig})
         ```
         Manage portfolio:
         ```
-        ig view                - view holdings and current market values
-        ig perf                - compare with yesterday's EOD prices
         ig buy <n> <symbol>    - buy <n> shares of a stock
         ig sell <n> <symbol>   - sell <n> shares of a stock
+        ig view                - view holdings and current market values
+        ig perf                - compare with yesterday's EOD prices
+        ig gl                  - gain/loss view of your current portfolio
         ```
         How are you doing?
         ```
@@ -163,6 +164,23 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:perf}, args)
     return nothing
 end
 
+function ig_execute(c::Client, m::Message, user::User, ::Val{:gl}, args)
+    ig_affirm_player(user.id)
+    df = ig_gain_loss(user.id)
+    table = pretty_table(String, df; header = names(df))
+    discord_reply(
+        c, m,
+        ig_hey(user.username, """here are the gains/losses for your stocks:
+            ```
+            $table
+            ```
+            """
+        )
+    )
+    return nothing
+end
+
+"Return a data frame with daily performance of user's current holdings."
 function ig_perf(user_id::UInt64)
     pf = ig_load_portfolio(user_id)
     symbols = unique(h.symbol for h in pf.holdings)
@@ -179,6 +197,22 @@ function ig_perf(user_id::UInt64)
     )
     rename!(df, "pct_chg" => "% chg")
     sort!(df, :symbol)
+    return df
+end
+
+"Return a data frame with gains/losses for user's current holdings."
+function ig_gain_loss(user_id::UInt64)
+    pf = ig_load_portfolio(user_id)
+    df = ig_grouped_holdings(ig_holdings_data_frame(pf))
+    rename!(df, "purchase_price" => "px_buy")
+
+    df.px_now = fetch.(@async(ig_get_quote(s)) for s in df.symbol)
+    df.chg = round.(df.px_now .- df.px_buy; digits = 2)
+    df.pct_chg = round.(df.chg ./ df.px_buy * 100; digits = 1)
+    rename!(df, "pct_chg" => "% chg")
+
+    df.shares = round.(Int, df.shares)
+
     return df
 end
 
@@ -337,14 +371,15 @@ ig_remove_game(user_id::UInt64) = rm(ig_file_path(user_id))
 
 "Affirms the user has a game or throw an exception."
 function ig_affirm_player(user_id::UInt64)
-    ig_is_player(user_id) || throw(IgUserError("you don't have a game yet."))
+    ig_is_player(user_id) || throw(IgUserError(
+        "you don't have a game yet. Type `ig start-game` to start a new game."))
     return nothing
 end
 
 "Affirms the user does not have game or throw an exception."
 function ig_affirm_non_player(user_id::UInt64)
     !ig_is_player(user_id) || throw(IgUserError(
-        "you already have a game running. Use `ig view` to see your current portfolio."
+        "you already have a game running. Type `ig view` to see your current portfolio."
     ))
     return nothing
 end
