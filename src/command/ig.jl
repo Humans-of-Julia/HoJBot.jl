@@ -165,7 +165,7 @@ end
 
 function ig_perf(user_id::UInt64)
     pf = ig_load_portfolio(user_id)
-    symbols = [h.symbol for h in pf.holdings]
+    symbols = unique([h.symbol for h in pf.holdings])
     prices_yesterday = fetch.(@async(ig_yesterday_price(s)) for s in symbols)
     prices_today = fetch.(@async(ig_get_quote(s)) for s in symbols)
     prices_change = prices_today .- prices_yesterday
@@ -573,7 +573,7 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
         "period1=$from_sec&period2=$to_sec&interval=1d&events=history&includeAdjustedClose=true"
     try
         elapsed = @elapsed df = DataFrame(CSV.File(Downloads.download(url)))
-        @debug "ig_historical_prices" symbol from_date to_date elapsed
+        @info "$(now())\tig_historical_prices\t$symbol\t$from_date\t$to_date\t$elapsed"
         return df
     catch ex
         if ex isa Downloads.RequestError && ex.response.status == 404
