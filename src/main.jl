@@ -1,32 +1,3 @@
-const active_commands = LittleDict([
-    :gm => false,
-    :ig => true,
-    :j => true,
-    :react => true,
-    :tz => true,
-    :discourse => true,
-])
-
-const commands_names = LittleDict([
-    :gm => :game_master,
-    :ig => :ig,
-    :j => :julia_doc,
-    :react => :reaction,
-    :tz => :time_zone,
-    :discourse => :discourse,
-])
-
-const handlers_list = [
-    (:reaction, MessageCreate, true),
-    (:whistle, MessageReactionAdd, true),
-    (:discourse, MessageReactionAdd, true),
-]
-
-const opt_services_list = [
-    :game_master,
-    :reaction,
-]
-
 # Package initiation hook
 function __init__()
     # Unfortunately, the default GR backend does not work well with
@@ -38,11 +9,11 @@ function __init__()
 end
 
 function help_message()
-    act_commands = collect(keys(filter(c -> c.second, active_commands)))
-    names = collect(values(filter(c -> active_commands[c.first], commands_names)))
+    act_commands = collect(keys(filter(c -> c.second, ACTIVE_COMMANDS)))
+    names = collect(values(filter(c -> ACTIVE_COMMANDS[c.first], COMMANDS_NAMES)))
 
     commands = mapreduce(c -> string(c) * "\n", *, act_commands)
-    opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, opt_services_list))
+    opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, OPT_SERVICES_LIST))
     str = """
     ```
     HoJBot accepts the following commands:
@@ -57,14 +28,16 @@ function help_message()
 end
 
 function start_bot(;
-    commands = active_commands,
-    handlers = handlers_list,
+    commands=ACTIVE_COMMANDS,
+    handlers=HANDLERS_LIST,
     run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
-    global client = Client(ENV["HOJBOT_DISCORD_TOKEN"];
-        presence = (game = (name = "HoJ", type = AT_GAME),),
-        prefix = COMMAND_PREFIX)
+    global client = Client(
+        ENV["HOJBOT_DISCORD_TOKEN"];
+        presence=(game=(name="HoJ", type=AT_GAME),),
+        prefix=COMMAND_PREFIX,
+    )
     init_handlers!(client, handlers)
     init_commands!(client, commands)
     # add_help!(client; help = help_message())
@@ -82,7 +55,7 @@ end
 
 function init_commands!(client::Client, commands)
     for (com, active) in commands
-        active && add_command!(client, com, (c, m) -> commander(c, m, commands_names[com]))
+        active && add_command!(client, com, (c, m) -> commander(c, m, COMMANDS_NAMES[com]))
     end
 end
 
@@ -93,7 +66,7 @@ Run a background process to track the program's run time and exit
 the program when it has exceeded the specified `run_duration` or
 when a file exists at `trigger_path`.
 """
-function auto_shutdown(c::Client, run_duration::TimePeriod, trigger_path::AbstractString = "")
+function auto_shutdown(c::Client, run_duration::TimePeriod, trigger_path::AbstractString="")
     start_time = now()
     @async while true
         if now() > start_time + run_duration
@@ -119,8 +92,7 @@ function shutdown_gracefully(c::Client)
     exit(0)
 end
 
-commander(c::Client, m::Message, service) =
-begin
+commander(c::Client, m::Message, service) = begin
     @info "commander" c m service
     commander(c, m, Val(service))
 end
@@ -130,11 +102,11 @@ function get_opt(username, discriminator)
     user = username * "_" * discriminator
     path = joinpath(pwd(), "data", "opt", user)
     !isfile(path) && write(path, "{}")
-    return JSON.parsefile(path; dicttype = LittleDict)
+    return JSON.parsefile(path; dicttype=LittleDict)
 end
 
 function get_opt!(username, discriminator, service)
-    return get!(get_opt(username, discriminator), string(service), false)
+    get!(get_opt(username, discriminator), string(service), false)
 end
 
 function set_opt!(username, discriminator, service, value)
@@ -148,24 +120,30 @@ end
 function opt_in(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    if service ∉ opt_services_list
-        reply(c, m,
+    if service ∉ OPT_SERVICES_LIST
+        reply(
+            c,
+            m,
             """
             Oh, @$username#$discriminator, the `$(string(service))` service either does not exist or accept opt-in/opt-out requests!
-            """
+            """,
         )
     elseif get_opt!(username, discriminator, service)
-        reply(c, m,
+        reply(
+            c,
+            m,
             """
             Oh, @$username#$discriminator, you already suscribed to the `$(string(service))` service!
-            """
+            """,
         )
     else
         set_opt!(username, discriminator, service, true)
-        reply(c, m,
+        reply(
+            c,
+            m,
             """
             Thanks @$username#$discriminator for joining our `$(string(service))` service!
-            """
+            """,
         )
     end
 end
@@ -173,24 +151,30 @@ end
 function opt_out(c::Client, m::Message, service)
     username = m.author.username
     discriminator = m.author.discriminator
-    if service ∉ opt_services_list
-        reply(c, m,
+    if service ∉ OPT_SERVICES_LIST
+        reply(
+            c,
+            m,
             """
             Oh, @$username#$discriminator, the `$(string(service))` service either does not exist or accept opt-in/opt-out requests!
-            """
+            """,
         )
     elseif !get_opt!(username, discriminator, service)
-        reply(c, m,
+        reply(
+            c,
+            m,
             """
             Oh, @$username#$discriminator, you haven't suscribed to the `$(string(service))` service!
-            """
+            """,
         )
     else
         set_opt!(username, discriminator, service, false)
-        reply(c, m,
+        reply(
+            c,
+            m,
             """
             It is sad that you're leaving our `$(string(service))` service, @$username#$discriminator. We hope you will come back soon and enjoy other HoJBot stuff!
-            """
+            """,
         )
     end
 end
@@ -207,11 +191,13 @@ function warm_up()
         elapsed = @elapsed try
             symbol = "AAPL"
             ig_get_quote(symbol)
-            ig_save_portfolio(dummy_user_id, IgPortfolio(100, [IgHolding(symbol, 100, today(), 130)]))
+            ig_save_portfolio(
+                dummy_user_id, IgPortfolio(100, [IgHolding(symbol, 100, today(), 130)])
+            )
             ig_load_portfolio(dummy_user_id)
             ig_ranking_table(Client("hey"))
 
-            from_date, to_date = Date(2020,1,1), Date(2020,12,31)
+            from_date, to_date = Date(2020, 1, 1), Date(2020, 12, 31)
             df = ig_historical_prices(symbol, from_date, to_date)
             ig_chart(symbol, df.Date, df."Adj Close")
         catch ex

@@ -12,7 +12,7 @@ fi
 
 while true; do
     echo "`date`: Starting HoJBot..."
-    julia --project=. -e "using HoJBot, Dates; start_bot(; run_duration = Minute(${RUN_DURATION_MINUTES}));"
+    julia --project=. -e "using Pkg; Pkg.instantiate(); using HoJBot, Dates; start_bot(; run_duration = Minute(${RUN_DURATION_MINUTES}));"
     if [[ "$RUN_ONCE" == "yes" ]]; then
         break
     fi
