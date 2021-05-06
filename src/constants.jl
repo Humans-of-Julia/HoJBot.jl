@@ -22,9 +22,10 @@ const COMMANDS_NAMES = LittleDict([
 ])
 
 const HANDLERS_LIST = [
-    (:reaction, MessageCreate, true),
-    (:whistle, MessageReactionAdd, true),
     (:discourse, MessageReactionAdd, true),
+    (:mod,       MessageCreate,      true),
+    (:reaction,  MessageCreate,      true),
+    (:whistle,   MessageReactionAdd, true),
 ]
 
 const OPT_SERVICES_LIST = [:game_master, :reaction]

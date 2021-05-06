@@ -38,6 +38,7 @@ include("command/src.jl")
 
 include("handler/reaction.jl")
 include("handler/whistle.jl")
+include("handler/mod.jl")
 
 include("type/discourse.jl")
 include("command/discourse.jl")
