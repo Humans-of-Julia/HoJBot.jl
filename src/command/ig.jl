@@ -653,7 +653,8 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
     url = "https://query1.finance.yahoo.com/v7/finance/download/$symbol?" *
         "period1=$from_sec&period2=$to_sec&interval=1d&events=history&includeAdjustedClose=true"
     try
-        elapsed = @elapsed df = DataFrame(CSV.File(Downloads.download(url)))
+        elapsed = @elapsed df = DataFrame(CSV.File(Downloads.download(url); missingstring="null"))
+        dropmissing!(df)
         @info "$(now())\tig_historical_prices\t$symbol\t$from_date\t$to_date\t$elapsed"
         return df
     catch ex
