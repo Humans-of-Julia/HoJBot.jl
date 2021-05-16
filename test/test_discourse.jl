@@ -7,7 +7,7 @@ import JSON3
 
 @testset "discourse" begin
 
-    json = discourse_run_query("search.json", "pluto")
+    json = discourse_run_query("search.json", Dict(:q => "pluto"))
 
     let
         @test json isa JSON3.Object
@@ -17,7 +17,10 @@ import JSON3
         @test hasproperty(json.topics[1], :slug)
     end
 
-    let data = DiscourseData(json)
+    let topic_fn = x -> x.topics,
+        make_post_fn = x -> DiscoursePost(x.id, x.slug),
+        data = DiscourseData(topic_fn(json), make_post_fn)
+
         @test length(data) == length(json.topics)
         @test 1 <= data.index <= length(data)
         @test current(data) isa DiscoursePost
