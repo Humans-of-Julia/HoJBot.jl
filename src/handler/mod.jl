@@ -1,10 +1,12 @@
 const MOD_REPORT_CHANNEL_NAME = "mod-report"
 const MOD_REPORT_CHANNEL = Ref{DiscordChannel}()
-const BAD_WORDS = Vector{String}()
+const BAD_WORDS = String[]
 
-function handler(c::Client, e::MessageCreate, ::Val{:mod})
-    # @info "mod handler: $(e.message.content)"
-
+function handler(
+    c::Client, 
+    e::Union{MessageCreate, MessageUpdate}, 
+    ::Val{:mod}
+)
     mod_report_channel = mod_get_report_channel(c, e.message.guild_id)
     if mod_report_channel === nothing
         return # config error; nothing we can do about...
@@ -94,6 +96,11 @@ function mod_check(content::AbstractString)
     return (:good, "")
 end
 
+"""
+    mod_report
+
+Return a string about the issue that will be sent to the mod-report channel.
+"""
 function mod_report(
     username::AbstractString,
     content::AbstractString,
