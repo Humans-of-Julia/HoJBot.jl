@@ -24,6 +24,7 @@ const COMMANDS_NAMES = LittleDict([
 const HANDLERS_LIST = [
     (:discourse, MessageReactionAdd, true),
     (:mod,       MessageCreate,      true),
+    (:mod,       MessageUpdate,      true),
     (:reaction,  MessageCreate,      true),
     (:whistle,   MessageReactionAdd, true),
 ]
