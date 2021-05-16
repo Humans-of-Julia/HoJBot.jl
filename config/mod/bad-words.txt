@@ -56,7 +56,7 @@ b1tch
 babe
 babes
 ballsack
-?bang
+-bang
 banger
 ?barf
 bastard
@@ -110,19 +110,19 @@ bosom
 bosomy
 bowel
 bowels
-bra
+-bra
 brassiere
-breast
-breasts
+?breast
+?breasts
 bugger
 bukkake
-bullshit
-bullshits
+-bullshit
+-bullshits
 bullshitted
 bullturds
 bung
 busty
-butt
+?butt
 butt fuck
 buttfuck
 buttfucker
@@ -201,10 +201,10 @@ d1ld0
 d1ldo
 dago
 dagos
-dammit
-damn
-damned
-damnit
+?dammit
+?damn
+?damned
+?damnit
 dawgie-style
 dick
 dickbag
@@ -240,7 +240,7 @@ douche
 douchebag
 douchebags
 douchey
-?drunk
+-drunk
 dumass
 dumbass
 dumbasses
@@ -272,7 +272,7 @@ faigt
 fannybandit
 fart
 fartknocker
-?fat
+-fat
 felch
 felcher
 felching
@@ -657,7 +657,7 @@ stiffy
 stoned
 strip
 stroke
-stupid
+-stupid
 suck
 sucked
 sucking
@@ -696,7 +696,7 @@ turd
 tush
 twat
 twats
-ugly
+-ugly
 undies
 unwed
 urinal
