@@ -136,7 +136,7 @@ Update a Discord message with new content.
 """
 function update_message(c::Client, channel_id::UInt64, message_id::UInt64, content::AbstractString)
     message = Message(; id = message_id, channel_id = channel_id)
-    @discord update(c, message; content)
+    return @discord update(c, message; content)
 end
 
 """

@@ -1,12 +1,22 @@
 const MOD_REPORT_CHANNEL_NAME = "mod-report"
 const MOD_REPORT_CHANNEL = Ref{DiscordChannel}()
-const BAD_WORDS = String[]
+
+const MOD_BAD_WORDS = Set{AbstractBadWord}()
+const MOD_BAD_WORD_REGEXES = Dict{AbstractBadWord,Regex}()
 
 function handler(
     c::Client, 
     e::Union{MessageCreate, MessageUpdate}, 
     ::Val{:mod}
 )
+    if ismissing(e.message.content)
+        return # Possible e.g. only embed is updated by Discord (flipping discourse)
+    end
+
+    if e.message.author.id == c.state.user.id
+        return # No need to check if the message came from the bot itself
+    end
+
     mod_report_channel = mod_get_report_channel(c, e.message.guild_id)
     if mod_report_channel === nothing
         return # config error; nothing we can do about...
@@ -16,12 +26,19 @@ function handler(
     end
 
     mod_init() # lazy initialization
-    result, word_involed = mod_check(e.message.content)
-    if result != :good
+    result = mod_check_message(e.message.content)
+    if !isempty(result)
+        # Update the mod-report channel
         username = e.message.author.username
-        report = mod_report(username, e.message.content, result, word_involed)
+        report = mod_report(username, e.message.content, result)
         if mod_report_channel !== nothing
-            create(c, Message, mod_report_channel; content = report)
+            create_message(c, mod_report_channel.id; content = report)
+        end
+        # Censor message
+        new_content = mod_censor_message(e.message.content, result)
+        if new_content != e.message.content
+            delete_message(c, e.message.channel_id, e.message.id)
+            create_message(c, e.message.channel_id; content = "$(e.message.author.username) said: $new_content")
         end
     end
     return nothing
@@ -45,36 +62,69 @@ end
 
 "Initialize mod function e.g. read bad words list."
 function mod_init()
-    if isempty(BAD_WORDS)
+    if isempty(MOD_BAD_WORDS)
         bad_words_file = joinpath(@__DIR__, "..", "..", "config", "mod", "bad-words.txt")
         bad_words = readlines(bad_words_file)
-        append!(BAD_WORDS, bad_words)
+        for word in bad_words
+            if startswith(word, '?')
+                mod_add_bad_word(QuestionableWord(word[2:end]))
+            elseif startswith(word, '-')
+                mod_add_bad_word(OverriddenWord(word[2:end]))
+            else
+                mod_add_bad_word(BadWord(word))
+            end
+        end
     end
 end
 
-"Returns true if the word string is questionably bad."
-mod_is_questionable(w::AbstractString) = startswith(w, "?")
+"Create a regex that matches a word."
+function mod_make_regex(word::AbstractString)
+    return Regex(string(
+        "\\b",           # any word boundary
+        "\\Q",           # parse symbols as-is with \Q and \E marker
+        word,
+        "\\E",
+        "\\b",           # any word boundary
+    ))
+end
 
-"Return true if the string contains any non-alpha/numeric character."
-mod_contains_symbols(w::AbstractString) = occursin(r"[^0-9a-zA-Z]", w)
+"Add a new bad word to the global list."
+function mod_add_bad_word(w::AbstractBadWord)
+    try
+        MOD_BAD_WORD_REGEXES[w] = mod_make_regex(w.word)
+        push!(MOD_BAD_WORDS, w)
+    catch ex
+        @warn "Cannot compile regex for word" w.word regex_str
+    end
+end
 
 "Return true if `content` contains `word` considering word boundaries."
-function mod_contains(content::AbstractString, word::AbstractString)
+function mod_contains(content::AbstractString, w::T) where {T <: AbstractBadWord}
     content = lowercase(content)
-    try
-        regex = Regex("\\b" * word * "\\b")
-        return match(regex, content) !== nothing
-    catch ex
-        @error "cannot compile: $word"
-        Base.showerror(stdout, ex)
-        return false
-    end
+    regex = MOD_BAD_WORD_REGEXES[w]
+    return match(regex, content) !== nothing
 end
 
-"Return true if `word` appears anywhere in `content` without considering word boundaries."
-function mod_contains_exactly(content::AbstractString, word::AbstractString)
-    content = lowercase(content)
-    return occursin(word, content)
+"""
+    mod_check_message(content::AbstractString)
+
+Check the message content and return a set
+of identified bad words. An empty set is returned if
+nothing is found.
+"""
+function mod_check_message(content::AbstractString)
+    # split by spoiler marker
+    # after this, every even-number token is within the spoiler markers
+    tokens = split(content, "||")
+
+    result = Set{AbstractBadWord}()
+    for (i, t) in enumerate(tokens)
+        if isodd(i)
+            bad_word_set = mod_check(t)
+            union!(result, bad_word_set)
+        end
+    end
+    return result
 end
 
 """
@@ -83,17 +133,8 @@ end
 Check the content against a profanity set of words. Returns status as
 one of the symbols - `:good`, `:bad`, or `:questionable`.
 """
-function mod_check(content::AbstractString)
-    for bad_word in BAD_WORDS
-        questionable = mod_is_questionable(bad_word)
-        word = questionable ? bad_word[2:end] : bad_word
-        if (mod_contains_symbols(word) && mod_contains_exactly(content, word)) ||
-                mod_contains(content, word)
-            @info "Bad word `$word` detected: $content"
-            return questionable ? (:questionable, word) : (:bad, word)
-        end
-    end
-    return (:good, "")
+function mod_check(content::AbstractString)    
+    return Set{AbstractBadWord}(w for w in MOD_BAD_WORDS if mod_contains(content, w))
 end
 
 """
@@ -104,14 +145,75 @@ Return a string about the issue that will be sent to the mod-report channel.
 function mod_report(
     username::AbstractString,
     content::AbstractString,
-    result::Symbol,
-    word_involved::AbstractString,
+    bad_words::AbstractSet{AbstractBadWord}
 )
-    return if result == :bad
-        "Bad message from $username with `$word_involved`: $(content)"
-    elseif result == :questionable
-        "Questionable message from $username with `$word_involved`: $(content)"
-    else # should never happen
-        "Unclear how bad is the message from $username with `$word_involved`: $(content)"
+    str = join([string(w) for w in bad_words], ",")
+    badness = mod_badness(bad_words)
+    return "$badness message from $username with `$str`: $(content)"
+end
+
+"""
+    mod_badness(bad_words::AbstractSet{AbstractBadWord})
+
+Return a string that describe how bad the message is based
+upon the set of bad words already found from the message.
+"""
+function mod_badness(bad_words::AbstractSet{AbstractBadWord})
+    return if any(x -> x isa BadWord, bad_words)
+        "Bad"
+    elseif any(x -> x isa QuestionableWord, bad_words)
+        "Questionable"
+    elseif any(x -> x isa OverriddenWord, bad_words)
+        "Overridden"
+    else
+        "Unknown"
     end
+end
+
+"""
+    mod_censor_message(content, bad_words)
+
+Returned a censored string for the message. For example, 
+bad words may be hidden using spoiler tags. Text that are within
+Discord spoiler markers are ignored. Only `bad_words` are
+considered. See `mod_check_message`[@ref] about how to gather
+the list.
+"""
+function mod_censor_message(
+    content::AbstractString,
+    bad_words::AbstractSet{AbstractBadWord}
+)
+    original_content = content
+
+    tokens = split(content, "||")
+    buf = IOBuffer()
+    for (i, token) in enumerate(tokens)
+        if isodd(i)
+            token = mod_censor(token, bad_words)
+        else
+            token = "||" * token * "||"
+        end
+        print(buf, token)
+    end
+    content = String(take!(buf))
+
+    @info "Censored: original=$original_content new=$content"
+    return content
+end
+
+"""
+    mod_censor(content, bad_words)
+
+If the `content` contains any bad word from the list, then it is
+hidden by Discord spoiler markers. See `mod_check_message`[@ref]
+about how to gather the list.
+"""
+function mod_censor(content::AbstractString, bad_words::AbstractSet{AbstractBadWord})
+    for w in bad_words
+        regex = MOD_BAD_WORD_REGEXES[w]
+        if w isa BadWord || w isa QuestionableWord
+            content = replace(content, regex => string("||", w, "||"))
+        end
+    end
+    return content
 end
