@@ -5,8 +5,8 @@ const MOD_BAD_WORDS = Set{AbstractBadWord}()
 const MOD_BAD_WORD_REGEXES = Dict{AbstractBadWord,Regex}()
 
 function handler(
-    c::Client, 
-    e::Union{MessageCreate, MessageUpdate}, 
+    c::Client,
+    e::Union{MessageCreate, MessageUpdate},
     ::Val{:mod}
 )
     if ismissing(e.message.content)
@@ -28,9 +28,10 @@ function handler(
     mod_init() # lazy initialization
     result = mod_check_message(e.message.content)
     if !isempty(result)
+        user_id = e.message.author.id
         # Update the mod-report channel
-        username = e.message.author.username
-        report = mod_report(username, e.message.content, result)
+        report = mod_report(user_id, e.message.content, result,
+            e.message.id, e.message.channel_id, e.message.guild_id)
         if mod_report_channel !== nothing
             create_message(c, mod_report_channel.id; content = report)
         end
@@ -38,7 +39,7 @@ function handler(
         new_content = mod_censor_message(e.message.content, result)
         if new_content != e.message.content
             delete_message(c, e.message.channel_id, e.message.id)
-            create_message(c, e.message.channel_id; content = "$(e.message.author.username) said: $new_content")
+            create_message(c, e.message.channel_id; content = "<@!$(user_id)> said: $new_content")
         end
     end
     return nothing
@@ -61,7 +62,10 @@ function mod_get_report_channel(c::Client, guild_id::UInt64)
 end
 
 "Initialize mod function e.g. read bad words list."
-function mod_init()
+function mod_init(; force = false)
+    if force
+        empty!(MOD_BAD_WORDS)
+    end
     if isempty(MOD_BAD_WORDS)
         bad_words_file = joinpath(@__DIR__, "..", "..", "config", "mod", "bad-words.txt")
         bad_words = readlines(bad_words_file)
@@ -81,11 +85,13 @@ end
 function mod_make_regex(word::AbstractString)
     return Regex(string(
         "\\b",           # any word boundary
+        "(",
         "\\Q",           # parse symbols as-is with \Q and \E marker
         word,
         "\\E",
+        ")",
         "\\b",           # any word boundary
-    ))
+    ), "i")
 end
 
 "Add a new bad word to the global list."
@@ -100,7 +106,6 @@ end
 
 "Return true if `content` contains `word` considering word boundaries."
 function mod_contains(content::AbstractString, w::T) where {T <: AbstractBadWord}
-    content = lowercase(content)
     regex = MOD_BAD_WORD_REGEXES[w]
     return match(regex, content) !== nothing
 end
@@ -133,7 +138,7 @@ end
 Check the content against a profanity set of words. Returns status as
 one of the symbols - `:good`, `:bad`, or `:questionable`.
 """
-function mod_check(content::AbstractString)    
+function mod_check(content::AbstractString)
     return Set{AbstractBadWord}(w for w in MOD_BAD_WORDS if mod_contains(content, w))
 end
 
@@ -143,13 +148,17 @@ end
 Return a string about the issue that will be sent to the mod-report channel.
 """
 function mod_report(
-    username::AbstractString,
+    user_id::UInt64,
     content::AbstractString,
-    bad_words::AbstractSet{AbstractBadWord}
+    bad_words::AbstractSet{AbstractBadWord},
+    message_id::UInt64,
+    channel_id::UInt64,
+    guild_id::UInt64,
 )
     str = join([string(w) for w in bad_words], ",")
     badness = mod_badness(bad_words)
-    return "$badness message from $username with `$str`: $(content)"
+    return "$badness message from <@!$user_id> with `$str`: $(content)\n" *
+        "Ref: https://discord.com/channels/$guild_id/$channel_id/$message_id"
 end
 
 """
@@ -173,7 +182,7 @@ end
 """
     mod_censor_message(content, bad_words)
 
-Returned a censored string for the message. For example, 
+Returned a censored string for the message. For example,
 bad words may be hidden using spoiler tags. Text that are within
 Discord spoiler markers are ignored. Only `bad_words` are
 considered. See `mod_check_message`[@ref] about how to gather
@@ -212,7 +221,7 @@ function mod_censor(content::AbstractString, bad_words::AbstractSet{AbstractBadW
     for w in bad_words
         regex = MOD_BAD_WORD_REGEXES[w]
         if w isa BadWord || w isa QuestionableWord
-            content = replace(content, regex => string("||", w, "||"))
+            content = replace(content, regex => s"||\1||")
         end
     end
     return content
