@@ -29,17 +29,20 @@ function handler(
     result = mod_check_message(e.message.content)
     if !isempty(result)
         user_id = e.message.author.id
-        # Update the mod-report channel
-        report = mod_report(user_id, e.message.content, result,
-            e.message.id, e.message.channel_id, e.message.guild_id)
-        if mod_report_channel !== nothing
-            create_message(c, mod_report_channel.id; content = report)
-        end
+        report_message_id = e.message.id
         # Censor message
         new_content = mod_censor_message(e.message.content, result)
         if new_content != e.message.content
             delete_message(c, e.message.channel_id, e.message.id)
-            create_message(c, e.message.channel_id; content = "<@!$(user_id)> said: $new_content")
+            censored_message = @discord create_message(c, e.message.channel_id;
+                content = "<@!$(user_id)> said: $new_content")
+            report_message_id = censored_message.id
+        end
+        # Update the mod-report channel
+        report = mod_report(user_id, e.message.content, result,
+            report_message_id, e.message.channel_id, e.message.guild_id)
+        if mod_report_channel !== nothing
+            create_message(c, mod_report_channel.id; content = report)
         end
     end
     return nothing
