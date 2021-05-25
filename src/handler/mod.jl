@@ -1,8 +1,8 @@
 const MOD_REPORT_CHANNEL_NAME = "mod-report"
 const MOD_REPORT_CHANNEL = Ref{DiscordChannel}()
 
-const MOD_BAD_WORDS = Set{AbstractBadWord}()
-const MOD_BAD_WORD_REGEXES = Dict{AbstractBadWord,Regex}()
+const MOD_BAD_WORDS = Set{BadWord}()
+const MOD_BAD_WORD_REGEXES = Dict{BadWord,Regex}()
 
 function handler(
     c::Client,
@@ -49,7 +49,7 @@ function handler(
 end
 
 "Get the mod-report channel."
-function mod_get_report_channel(c::Client, guild_id::UInt64)
+function mod_get_report_channel(c::Client, guild_id::Integer)
     if !isassigned(MOD_REPORT_CHANNEL)
         channels = @discord get_guild_channels(c, guild_id)
         channel = filter(c -> c.name == MOD_REPORT_CHANNEL_NAME, channels)
@@ -74,11 +74,11 @@ function mod_init(; force = false)
         bad_words = readlines(bad_words_file)
         for word in bad_words
             if startswith(word, '?')
-                mod_add_bad_word(QuestionableWord(word[2:end]))
+                mod_add_bad_word(BadWord(Questionable, word[2:end]))
             elseif startswith(word, '-')
-                mod_add_bad_word(OverriddenWord(word[2:end]))
+                mod_add_bad_word(BadWord(Overridden, word[2:end]))
             else
-                mod_add_bad_word(BadWord(word))
+                mod_add_bad_word(BadWord(Bad, word))
             end
         end
     end
@@ -98,7 +98,7 @@ function mod_make_regex(word::AbstractString)
 end
 
 "Add a new bad word to the global list."
-function mod_add_bad_word(w::AbstractBadWord)
+function mod_add_bad_word(w::BadWord)
     try
         MOD_BAD_WORD_REGEXES[w] = mod_make_regex(w.word)
         push!(MOD_BAD_WORDS, w)
@@ -108,7 +108,7 @@ function mod_add_bad_word(w::AbstractBadWord)
 end
 
 "Return true if `content` contains `word` considering word boundaries."
-function mod_contains(content::AbstractString, w::T) where {T <: AbstractBadWord}
+function mod_contains(content::AbstractString, w::BadWord)
     regex = MOD_BAD_WORD_REGEXES[w]
     return match(regex, content) !== nothing
 end
@@ -125,7 +125,7 @@ function mod_check_message(content::AbstractString)
     # after this, every even-number token is within the spoiler markers
     tokens = split(content, "||")
 
-    result = Set{AbstractBadWord}()
+    result = Set{BadWord}()
     for (i, t) in enumerate(tokens)
         if isodd(i)
             bad_word_set = mod_check(t)
@@ -138,11 +138,10 @@ end
 """
     mod_check(content::AbstractString)
 
-Check the content against a profanity set of words. Returns status as
-one of the symbols - `:good`, `:bad`, or `:questionable`.
+Check the content against a profanity set of words.
 """
 function mod_check(content::AbstractString)
-    return Set{AbstractBadWord}(w for w in MOD_BAD_WORDS if mod_contains(content, w))
+    return Set{BadWord}(w for w in MOD_BAD_WORDS if mod_contains(content, w))
 end
 
 """
@@ -151,31 +150,31 @@ end
 Return a string about the issue that will be sent to the mod-report channel.
 """
 function mod_report(
-    user_id::UInt64,
+    user_id::Integer,
     content::AbstractString,
-    bad_words::AbstractSet{AbstractBadWord},
-    message_id::UInt64,
-    channel_id::UInt64,
-    guild_id::UInt64,
+    bad_words::AbstractSet{BadWord},
+    message_id::Integer,
+    channel_id::Integer,
+    guild_id::Integer,
 )
-    str = join([string(w) for w in bad_words], ",")
+    str = join([w.word for w in bad_words], ", ")
     badness = mod_badness(bad_words)
     return "$badness message from <@!$user_id> with `$str`: $(content)\n" *
         "Ref: https://discord.com/channels/$guild_id/$channel_id/$message_id"
 end
 
 """
-    mod_badness(bad_words::AbstractSet{AbstractBadWord})
+    mod_badness(bad_words::AbstractSet{BadWord})
 
 Return a string that describe how bad the message is based
 upon the set of bad words already found from the message.
 """
-function mod_badness(bad_words::AbstractSet{AbstractBadWord})
-    return if any(x -> x isa BadWord, bad_words)
+function mod_badness(bad_words::AbstractSet{BadWord})
+    return if any(x -> x.class === Bad, bad_words)
         "Bad"
-    elseif any(x -> x isa QuestionableWord, bad_words)
+    elseif any(x -> x.class === Questionable, bad_words)
         "Questionable"
-    elseif any(x -> x isa OverriddenWord, bad_words)
+    elseif any(x -> x.class === Overridden, bad_words)
         "Overridden"
     else
         "Unknown"
@@ -193,7 +192,7 @@ the list.
 """
 function mod_censor_message(
     content::AbstractString,
-    bad_words::AbstractSet{AbstractBadWord}
+    bad_words::AbstractSet{BadWord}
 )
     original_content = content
 
@@ -220,10 +219,10 @@ If the `content` contains any bad word from the list, then it is
 hidden by Discord spoiler markers. See `mod_check_message`[@ref]
 about how to gather the list.
 """
-function mod_censor(content::AbstractString, bad_words::AbstractSet{AbstractBadWord})
+function mod_censor(content::AbstractString, bad_words::AbstractSet{BadWord})
     for w in bad_words
         regex = MOD_BAD_WORD_REGEXES[w]
-        if w isa BadWord || w isa QuestionableWord
+        if w.class in (Bad, Questionable)
             content = replace(content, regex => s"||\1||")
         end
     end
