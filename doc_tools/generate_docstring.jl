@@ -1,3 +1,28 @@
+"""
+This file contains tools to generate, and save to JSON, two Ditcs,
+one with the pairs of names and their docstrings, and the other with
+the pairs of names and the packages they appear in. See [`main`](@ref).
+
+You may either call this file from the shell, e.g. with (from the
+directory where the script resides)
+
+```zsh
+% julia --project=@. generate_docstring.jl
+```
+
+or, which is more common, from the Julia REPL, with
+
+```julia
+julia> include("generate_docstring.jl")
+
+julia> main()
+```
+
+The second option makes more sense, since one would do this after
+adding new packages to the environment, so their docstrings get added
+to the lists.
+"""
+
 using Pkg
 using JSON
 
@@ -157,15 +182,26 @@ function load_names(filename::String)::Dict{String,Vector{String}}
     return all_names
 end
 
-function main()
-    all_docs = get_all_docs(all=true)
+"""
+    main(;all=true, imported=false)
+
+Generate two JSON files, one with the list of names and their docstrings
+and the other with the list of names and the packages they appear in.
+
+The packages are taken from the active environment, which should contain
+at least `Pkg` and `JSON`.
+
+The JSON files are saved, respectively in "../../data/docs/all_docs.json"
+and "../../data/docs/all_names.json", both relative to the script path.
+"""
+function main(;all=true, imported=false)
+    all_docs = get_all_docs(all=all, imported=imported)
     all_names = get_all_names(all_docs)
     save_docs(joinpath(@__DIR__, "..", "data", "docs", "all_docs.json"), all_docs)
     save_names(joinpath(@__DIR__, "..", "data", "docs", "all_names.json"), all_names)
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
-    import Pkg
-    Pkg.activate(@__DIR__)
     main()
 end
+
