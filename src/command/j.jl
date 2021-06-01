@@ -2,13 +2,16 @@
 
 function parse_doc(doc::AbstractString)
     doc = replace(doc, r"\n\n\n+" => "\n\n")
+    capture_ranges = [m.offset:m.offset+ncodeunits(m.match)-1 for m in eachmatch.(r"(```.+?```)"s, doc)]
     for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n",doc)
-        if m.captures[2] == "# "
-            doc = replace(doc, m.match => m.captures[1]*"**"*m.captures[3]*"**\n"*"≡"^(length(m.captures[3])), count = 1)
-        elseif m.captures[2] == "!!! "
-            doc = replace(doc, m.match => m.captures[1]*"__"*m.captures[3]*"__\n", count = 1)
-        else
-            doc = replace(doc, m.match => m.captures[1]*"*"*m.captures[3]*"*\n"*"-"^(length(m.captures[3])), count = 1)
+        if all(rg -> m.offset ∉ rg, capture_ranges)
+            if m.captures[2] == "# "
+                doc = replace(doc, m.match => m.captures[1]*"**"*m.captures[3]*"**\n"*"≡"^(length(m.captures[3])), count = 1)
+            elseif m.captures[2] == "!!! "
+                doc = replace(doc, m.match => m.captures[1]*"__"*m.captures[3]*"__\n", count = 1)
+            else
+                doc = replace(doc, m.match => m.captures[1]*"*"*m.captures[3]*"*\n"*"-"^(length(m.captures[3])), count = 1)
+            end
         end
     end
     doc = replace(doc, r"(```.+)\n" => "```julia\n")
@@ -79,7 +82,7 @@ function handle_julia_help_commander(c::Client, m::Message, name)
                 if k in ("Base", "Keywords")
                     doc = v
                 else
-                    doc = "*In Package* `$k`:\n" * "+"^(8+length(k)) * "\n" * v
+                    doc = "*In Package* `$k`:\n" * v
                 end
                 doc = parse_doc(doc)
                 docs = split_message(doc, extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n"])
