@@ -53,6 +53,30 @@ function audit(
     end
 end
 
+"""
+    load_docs(filename)::Dict{String, Dict{String, String}}
+
+Return a Dict with the packages (keys) and name => docstring pairs (values)
+of all available packages in the given JSON file.
+"""
+function load_docs(filename)::Dict{String, Dict{String, String}}
+    all_docs = JSON.parsefile(filename)
+    all_docs = convert(Dict{String, Dict{String, String}}, all_docs)
+    return all_docs
+end
+
+"""
+    load_names(filename::String)::Nothing
+
+Save to a JSON file the list of names and the associated list of corresponding
+packages each name appears in.
+"""
+function load_names(filename::String)::Dict{String,Vector{String}}
+    all_names = JSON.parsefile(filename)
+    all_names = convert(Dict{String,Vector{String}}, all_names)
+    return all_names
+end
+
 function update_names_count(
         source::AbstractString,
         name::AbstractString,
