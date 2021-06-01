@@ -71,31 +71,38 @@ function handle_julia_help_commander(c::Client, m::Message, name)
     try
         channel = @discord get_channel(c, m.channel_id)
         all_names = load_names(joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json"))
+        pkg_in_name, name = occursin('.', name) ? split(name, '.') |> u -> (first(u), last(u)) : ("", name)
         if name in keys(all_names)
             all_docs = load_docs(joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json"))
             doc_in_pkgs = Dict{String, String}()
             for pkg in all_names[name]
-                push!(doc_in_pkgs, pkg => all_docs[pkg][name])
-            end
-            
-            for (k,v) in doc_in_pkgs
-                if k in ("Base", "Keywords")
-                    doc = v
-                else
-                    doc = "*In Package* `$k`:\n" * v
-                end
-                doc = parse_doc(doc)
-                docs = split_message(doc, extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n"])
-                for doc_chunk in docs
-                    # @show doc_chunk
-                    reply(c, m, doc_chunk)
+                if pkg_in_name in ("", pkg)
+                    push!(doc_in_pkgs, pkg => all_docs[pkg][name])
                 end
             end
             
-            count = update_names_count(
-                "namescount", name,
-                m.channel_id, channel.name)
-            reply(c, m, "*(Count number for `$name`: $count)*")
+            if length(doc_in_pkgs) > 0
+                for (k,v) in doc_in_pkgs
+                    if k in ("Base", "Keywords")
+                        doc = v
+                    else
+                        doc = "*In Package* `$k`:\n" * v
+                    end
+                    doc = parse_doc(doc)
+                    docs = split_message(doc, extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n"])
+                    for doc_chunk in docs
+                        # @show doc_chunk
+                        reply(c, m, doc_chunk)
+                    end
+                end
+                
+                count = update_names_count(
+                    "namescount", name,
+                    m.channel_id, channel.name)
+                reply(c, m, "*(Count number for `$name`: $count)*")
+            else
+                reply(c, m, "No documentation for `$name` found in package `$pkg`")
+            end
         else
             reply(c, m, "No documentation found.")
         end
