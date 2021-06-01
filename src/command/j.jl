@@ -12,7 +12,7 @@ function parse_doc(doc::AbstractString)
         end
     end
     doc = replace(doc, r"(```.+)\n" => "```julia\n")
-    doc = replace(doc, "```\n" => "```")
+    doc = replace(doc, "```\n\n" => "```\n")
     for m in eachmatch(r"\[([^ ]*)\]\(@ref\)",doc)
         doc = replace(doc, m.match => "`"*m.captures[1]*"`", count = 1)
     end
@@ -66,22 +66,35 @@ end
 function handle_julia_help_commander(c::Client, m::Message, name)
     # @info "julia_help_commander called"
     try
-        doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
-        doc = parse_doc(doc)
         channel = @discord get_channel(c, m.channel_id)
-        if !occursin("No documentation found", doc)
+        all_names = load_names(joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json"))
+        if name in keys(all_names)
+            all_docs = load_docs(joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json"))
+            doc_in_pkgs = Dict{String, String}()
+            for pkg in all_names[name]
+                push!(doc_in_pkgs, pkg => all_docs[pkg][name])
+            end
+            
+            for (k,v) in doc_in_pkgs
+                if k in ("Base", "Keywords")
+                    doc = v
+                else
+                    doc = "*In Package* `$k`:\n" * "+"^(8+length(k)) * "\n" * v
+                end
+                doc = parse_doc(doc)
+                docs = split_message(doc, extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n"])
+                for doc_chunk in docs
+                    # @show doc_chunk
+                    reply(c, m, doc_chunk)
+                end
+            end
+            
             count = update_names_count(
                 "namescount", name,
                 m.channel_id, channel.name)
-            doc *= "\n*(Count number for `$name`: $count)*"
-        end
-        if startswith(doc, r"```(?!julia)")
-            doc = replace(doc, "```" => "```\n", count=1)
-        end
-        docs = split_message(doc, extrastyles = [r"\n≡.+\n", r"n-.+\n"])
-        for doc_chunk in docs
-            # @show doc_chunk
-            reply(c, m, doc_chunk)
+            reply(c, m, "*(Count number for `$name`: $count)*")
+        else
+            reply(c, m, "No documentation found.")
         end
     catch ex
         @show ex
@@ -111,5 +124,14 @@ function handle_doc_stats(c::Client, m::Message, captured::AbstractString)
 end
 
 function handle_julia_package_list(c::Client, m::Message)
-    reply(c, m, "Packages available with docstrings:\n≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡≡\n `Base`")
+    all_docs_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
+    if isfile(all_docs_filename)
+        all_docs = load_docs(all_docs_filename)
+        msg = "Besides the keywords and Base, there are $(length(all_docs)-2) packages " *
+            "available with docstrings:\n\n" *
+            join(sort(collect(keys(all_docs))), ", ") * "."
+    else
+        msg = "No packages available with docstrings"
+    end
+    reply(c, m, msg)
 end
