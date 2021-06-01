@@ -35,8 +35,10 @@ function get_pkg_docs(pkg::String; all::Bool = false, imported::Bool = false)::D
         eval(Expr(:import, Expr(:., Symbol(pkg))))
         for name in names(eval(Symbol(pkg)), all=all, imported=imported)
             doc = string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$(Symbol(name)))))
-            if !occursin("No documentation found", doc)
-                push!(pkg_docs, string(name) => string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$name))))
+            if !startswith(string(name), "#")
+                if !occursin("No documentation found", doc) || occursin("[1]", doc)
+                    push!(pkg_docs, string(name) => string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$name))))
+                end
             end
         end
     catch ex
@@ -69,9 +71,11 @@ function get_all_docs(; all::Bool = false, imported::Bool = false)::Dict{String,
                 "mutable struct", "primitive type", "where", "in", "isa"]
             pkg_docs = Dict{String, String}()
             for name in Keywords
-                doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
-                if !occursin("No documentation found", doc)
-                    push!(pkg_docs, string(name) => doc)
+                if !startswith(string(name), "#")
+                    doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
+                    if !occursin("No documentation found", doc) || occursin("[1]", doc)
+                        push!(pkg_docs, string(name) => doc)
+                    end
                 end
             end
             push!(all_docs, pkg => pkg_docs)
@@ -161,5 +165,7 @@ function main()
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
+    import Pkg
+    Pkg.activate(@__DIR__)
     main()
 end
