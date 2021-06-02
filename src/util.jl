@@ -127,6 +127,7 @@ function stats_namescount(
 
     isfile(count_names_file) || return "Sorry, no stats found."
     namescount = JSON.parsefile(count_names_file)
+    name = strip(name)
     if length(name) > 0
         if name in keys(namescount)
             return "The docstring for `$name` has been looked upon $(namescount[name]["count"]) times!"
@@ -134,7 +135,8 @@ function stats_namescount(
             return "The docstring for `$name` has not been looked upon yet."
         end
     end
-    stats = sort(collect(namescount), by=x->x[2]["count"], rev=true)[1:min(end, number, 100)]
+    rev = place == "top" ? true : false
+    stats = sort(collect(namescount), by=x->x[2]["count"], rev=rev)[1:min(end, number, 100)]
     header = ifelse(place == "top", "**Top ", "**Bottom ") * "$(min(length(stats), number, 100)) stats**\n"
     header *= "≡"^(length(header)-8) * "\n__Count__\t__Name__\n"
     contents = prod(map(s -> "$(s[2]["count"])\t\t\t`$(s[1])`\n", stats))
