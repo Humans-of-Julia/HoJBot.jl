@@ -26,7 +26,7 @@ function commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j") || return
-    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages| stats)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages| package| stats)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_commander(c, m, Val(:julia_doc))
@@ -34,6 +34,8 @@ function commander(c::Client, m::Message, ::Val{:julia_doc})
         handle_julia_help_commander(c, m, matches.captures[2])
     elseif matches.captures[1] == " packages"
         handle_julia_package_list(c, m)
+    elseif matches.captures[1] == " package"
+        handle_julia_package_names(c, m, matches.captures[2])
     elseif matches.captures[1] == " stats"
         handle_doc_stats(c, m, matches.captures[2])
     else
@@ -45,23 +47,25 @@ end
 function help_commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
-        The `j` commands shows the docstring of names in the Base and other selected packages,
-        as well as statistics of its use.
+        The `j` commands shows the docstring of keywords, names in Base and names in other selected packages.
+        It also gives as statistics of its use.
 
-        How to use the `j` command:
+        Here are the available `j` commands and their use:
         ```
         j help
         j? <name>
         j doc <name>
         j packages
+        j package <Name>
         j stats <name>
         j stats <place> <number>
         ```
-        `j help` returns this help
-        `j packages` shows which packages are available for showing their docstrings (incomplete)
-        `j? <name>` and `j doc <name>` return the documentation for `<name>`
-        `j stats <name>` return how many times the docstring for `name` has been queried.
-        `j stats <place> <number>` return the top (if `place` is equal to either "top" or "head") or the bottom (if `place` is equal to either "bottom" or "tail") `number` names that have been queried.
+        * `j help` returns this help.
+        * `j packages` shows which packages are available with names.
+        * `j package <PkgName>` shows which names have bee recorded from to package <PkgName>.
+        * `j? <name>` and `j doc <name>` return the documentation for `<name>`
+        * `j stats <name>` return how many times the docstring for `name` has been queried.
+        * `j stats <place> <number>` return the top (if `place` is equal to either "top" or "head") or the bottom (if `place` is equal to either "bottom" or "tail") `number` names that have been queried.
         """)
     return nothing
 end
@@ -69,6 +73,8 @@ end
 function handle_julia_help_commander(c::Client, m::Message, name)
     # @info "julia_help_commander called"
     try
+        name = strip(name)
+        name = replace(name, r"\s{2,}" => " ")
         channel = @discord get_channel(c, m.channel_id)
         all_names = load_names(joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json"))
         pkg_in_name, name = occursin('.', name) ? split(name, '.') |> u -> (first(u), last(u)) : ("", name)
@@ -138,10 +144,35 @@ function handle_julia_package_list(c::Client, m::Message)
     if isfile(all_docs_filename)
         all_docs = load_docs(all_docs_filename)
         msg = "Besides the keywords and Base, there are $(length(all_docs)-2) packages " *
-            "available with docstrings:\n\n" *
+            "available with recorded names:\n\n" *
             join(sort(collect(keys(all_docs))), ", ") * "."
     else
-        msg = "No packages available with docstrings"
+        msg = "No packages available."
     end
     reply(c, m, msg)
+end
+
+function handle_julia_package_names(c::Client, m::Message, pkg)
+    pkg = strip(pkg)
+    pkg = replace(pkg, r"\s{2,}" => " ")
+    @info pkg
+    all_names_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json")
+    if isfile(all_names_filename)
+        all_names = load_names(all_names_filename)
+        pkg_list = [name for (name, pkgs) in all_names if pkg in pkgs]
+        # @info pkg_list
+        if length(pkg_list) > 0
+            msg = "$(length(pkg_list)) names recorded from package `$pkg`:\n\n" *
+              join(sort(pkg_list), ", ") * "."
+        else
+            msg = "No names found in `$pkg`."
+        end
+    else
+        msg = "No packages available."
+    end
+
+    msg = split_message(msg)
+    for msg_chunk in msg
+        reply(c, m, msg_chunk)
+    end
 end
