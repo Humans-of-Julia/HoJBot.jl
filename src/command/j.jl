@@ -35,7 +35,7 @@ function commander(c::Client, m::Message, ::Val{:julia_doc})
     elseif matches.captures[1] == " packages"
         handle_julia_package_list(c, m)
     elseif matches.captures[1] == " package"
-        handle_julia_package_names(c, m, matches.captures[2])
+        handle_julia_names_in_package(c, m, matches.captures[2])
     elseif matches.captures[1] in (" stats", " top", " bottom")
         handle_doc_stats(c, m, matches.captures[1], matches.captures[2])
     else
@@ -59,14 +59,14 @@ function help_commander(c::Client, m::Message, ::Val{:julia_doc})
         j? <name>
         j doc <name>
         j packages
-        j package <Name>
+        j package <PkgName>
         j stats [<name>]
         j top [<number>]
         j bottom [<number>]
         ```
         * `j help` returns this help.
         * `j packages` shows which packages are available with names.
-        * `j package <PkgName>` shows which names have bee recorded from to package <PkgName>.
+        * `j package <PkgName>` shows which names have bee recorded from to package `<PkgName>`.
         * `j? <name>` and `j doc <name>` return the documentation for `<name>`
         * `j stats <name>` return how many times the docstring for `name` has been queried.
         * `j top [<number>]` return the top 10 names that have been queried (or top `number`, if given).
@@ -75,7 +75,7 @@ function help_commander(c::Client, m::Message, ::Val{:julia_doc})
     return nothing
 end
 
-function handle_julia_help_commander(c::Client, m::Message, name)
+function handle_julia_help_commander(c::Client, m::Message, name::AbstractString)
     # @info "julia_help_commander called"
     try
         name = strip(name)
@@ -88,7 +88,7 @@ function handle_julia_help_commander(c::Client, m::Message, name)
             doc_in_pkgs = Dict{String, String}()
             for pkg in all_names[name]
                 if pkg_in_name in ("", pkg)
-                    push!(doc_in_pkgs, pkg => all_docs[pkg][name])
+                    push!(doc_in_pkgs, pkg => all_docs[pkg][name][2])
                 end
             end
             
@@ -154,7 +154,7 @@ function handle_julia_package_list(c::Client, m::Message)
     all_docs_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
     if isfile(all_docs_filename)
         all_docs = load_docs(all_docs_filename)
-        msg = "Besides the keywords and Base, there are $(length(all_docs)-2) packages " *
+        msg = "Besides the **keywords** and **Base**, there are $(length(all_docs)-2) packages " *
             "available with recorded names:\n\n" *
             join(sort(collect(keys(all_docs))), ", ") * "."
     else
@@ -163,18 +163,43 @@ function handle_julia_package_list(c::Client, m::Message)
     reply(c, m, msg)
 end
 
-function handle_julia_package_names(c::Client, m::Message, pkg)
+function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractString)
     pkg = strip(pkg)
     pkg = replace(pkg, r"\s{2,}" => " ")
     # @info pkg
     all_names_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json")
-    if isfile(all_names_filename)
+    all_docs_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
+    if isfile(all_names_filename) && isfile(all_docs_filename)
+        all_docs = load_docs(all_docs_filename)
         all_names = load_names(all_names_filename)
         pkg_list = [name for (name, pkgs) in all_names if pkg in pkgs]
+        pkg_list_exported = [name for name in pkg_list if all_docs[pkg][name][1] == "exported"]
+        pkg_list_nonexported = filter(name -> name ∉ pkg_list_exported, pkg_list) 
         # @info pkg_list
         if length(pkg_list) > 0
-            msg = "$(length(pkg_list)) names recorded from package `$pkg`:\n\n" *
-              join(sort(pkg_list), ", ") * "."
+            #msg = "$(length(pkg_list)) names recorded from package `$pkg`:\n\n" *
+            #  join(sort(pkg_list), ", ") * "."
+            msg = ""
+            if length(pkg_list_exported) == 0
+                msg *= "**There are no exported names recorded from package `$pkg`:**\n\n"
+            elseif length(pkg_list_exported) == 1
+                msg *= "**There is 1 exported name recorded from package `$pkg`:**\n\n"
+            else
+                msg *= "**There are $(length(pkg_list_exported)) exported names recorded from package `$pkg`:**\n\n"
+            end
+            if length(pkg_list_exported) > 0
+                msg *= join(sort(pkg_list_exported), ", ") * ".\n\n"
+            end
+            if length(pkg_list_nonexported) == 0
+                msg *= "**Besides, there aren't any nonexported names:**\n\n"
+            elseif length(pkg_list_nonexported) == 1
+                msg *= "**Besides, there is 1 nonexported name:**\n\n"
+            else
+                msg *= "**Besides, there are $(length(pkg_list_nonexported)) non-exported names:**\n\n"
+            end
+            if length(pkg_list_nonexported) > 1
+                msg *= join(sort(pkg_list_nonexported), ", ") * "."
+            end              
         else
             msg = "No names found in `$pkg`."
         end

@@ -54,14 +54,14 @@ function audit(
 end
 
 """
-    load_docs(filename)::Dict{String, Dict{String, String}}
+    load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
 
 Return a Dict with the packages (keys) and name => docstring pairs (values)
 of all available packages in the given JSON file.
 """
-function load_docs(filename)::Dict{String, Dict{String, String}}
+function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
     all_docs = JSON.parsefile(filename)
-    all_docs = convert(Dict{String, Dict{String, String}}, all_docs)
+    all_docs = convert(Dict{String, Dict{String, Vector{String}}}, all_docs)
     return all_docs
 end
 

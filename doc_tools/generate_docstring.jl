@@ -49,25 +49,26 @@ end
 
 Return a Dict with the names (keys) and docstrings (values) of a given package.
 """
-function get_pkg_docs(pkg::String)::Dict{String, String}
-    pkg_docs = Dict{String, String}()
-    names_exported = names(eval(Symbol(pkg)))
+function get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
+    pkg_docs = Dict{String, Vector{String}}()
+    num_exported = 0
     try
         eval(Expr(:import, Expr(:., Symbol(pkg))))
-        for name in names(eval(Symbol(pkg)))
+        names_exported = names(eval(Symbol(pkg)))
+        for name in names(eval(Symbol(pkg)), all=true)
             doc = string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$(Symbol(name)))))
             if !startswith(string(name), "#")
                 if !occursin("No documentation found", doc) || occursin("[1]", doc)
-                    push!(pkg_docs, string(name) => string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$name))))
+                    exported = name in names_exported ? "exported" : "nonexported"
+                    num_exported += exported == "exported" ? 1 : 0
+                    push!(pkg_docs, string(name) => [exported, string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$name)))])
                 end
             end
         end
-        # names_exported = filter(n -> n ∈ keys(pkg_docs), string.(names(eval(Symbol(pkg)))))
-        # names_nonexported = filter(n -> n ∉ names_exported, collect(keys(pkg_docs)))
     catch ex
         nothing
     end
-    @info "$(length(pkg_docs)) names retrieved from package $pkg"
+    @info "$(length(pkg_docs)) names retrieved ($num_exported being exported) from package $pkg"
     return pkg_docs
 end
 
@@ -77,8 +78,8 @@ end
 Return a Dict with the packages (keys) and name => docstring pairs (values)
 of all available packages which contain meaningful docstrings.
 """
-function get_all_docs()::Dict{String, Dict{String, String}}
-    all_docs = Dict{String, Dict{String, String}}()
+function get_all_docs()::Dict{String, Dict{String, Vector{String}}}
+    all_docs = Dict{String, Dict{String, Vector{String}}}()
     Keywords = [
         "baremodule", "begin", "break", "catch", "const",
         "continue", "do", "else", "elseif", "end", "export", "false",
@@ -89,12 +90,12 @@ function get_all_docs()::Dict{String, Dict{String, String}}
     ]
     for pkg in list_of_pkgs()
         if pkg == "Keywords"
-            pkg_docs = Dict{String, String}()
+            pkg_docs = Dict{String, Vector{String}}()
             for name in Keywords
                 if !startswith(string(name), "#")
                     doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
                     if !occursin("No documentation found", doc) || occursin("[1]", doc)
-                        push!(pkg_docs, string(name) => doc)
+                        push!(pkg_docs, string(name) => Vector{String}(["exported", doc]))
                     end
                 end
             end
@@ -116,7 +117,7 @@ end
 
 Save all available documentation as a JSON file with the given filename.
 """
-function save_docs(filename::String, all_docs::Dict{String, Dict{String, String}})::Nothing
+function save_docs(filename::String, all_docs::Dict{String, Dict{String, Vector{String}}})::Nothing
     write(filename, JSON.json(all_docs, 4))
     return nothing
 end
@@ -127,19 +128,19 @@ end
 Return a Dict with the packages (keys) and name => docstring pairs (values)
 of all available packages in the given JSON file.
 """
-function load_docs(filename)::Dict{String, Dict{String, String}}
+function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
     all_docs = JSON.parsefile(filename)
-    all_docs = convert(Dict{String, Dict{String, String}}, docs)
+    all_docs = convert(Dict{String, Dict{String, Vector{String}}}, docs)
     return all_docs
 end
 
 """
-    get_all_names(docs::Dict{String, Dict{String, String}})::Dict{String,Vector{String}}
+    get_all_names(docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Vector{String}}
 
 Return a Dict with all the names (keys) available with docstrings and all 
 the packages (values) where the given name is defined.
 """
-function get_all_names(all_docs::Dict{String, Dict{String, String}})::Dict{String,Vector{String}}
+function get_all_names(all_docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Vector{String}}
     all_names = Dict{String,Vector{String}}()
     for (pkg, docs) in all_docs
         for name in keys(docs)
