@@ -45,20 +45,16 @@ function list_of_pkgs()::Vector{String}
 end
 
 """
-    get_pkg_docs(pkg::String; all::Bool = false, imported::Bool = false)::Dict{String, String}
+    get_pkg_docs(pkg::String)::Dict{String, String}
 
 Return a Dict with the names (keys) and docstrings (values) of a given package.
-
-Optional keyword arguments inherited from `Base.names`:
-* If `all` is true, then the list also includes non-exported names defined in
-  the module, deprecated names, and compiler-generated names.
-* If `imported` is true, then names explicitly imported from other modules are also included.
 """
-function get_pkg_docs(pkg::String; all::Bool = false, imported::Bool = false)::Dict{String, String}
+function get_pkg_docs(pkg::String)::Dict{String, String}
     pkg_docs = Dict{String, String}()
+    names_exported = names(eval(Symbol(pkg)))
     try
         eval(Expr(:import, Expr(:., Symbol(pkg))))
-        for name in names(eval(Symbol(pkg)), all=all, imported=imported)
+        for name in names(eval(Symbol(pkg)))
             doc = string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$(Symbol(name)))))
             if !startswith(string(name), "#")
                 if !occursin("No documentation found", doc) || occursin("[1]", doc)
@@ -66,6 +62,8 @@ function get_pkg_docs(pkg::String; all::Bool = false, imported::Bool = false)::D
                 end
             end
         end
+        # names_exported = filter(n -> n ∈ keys(pkg_docs), string.(names(eval(Symbol(pkg)))))
+        # names_nonexported = filter(n -> n ∉ names_exported, collect(keys(pkg_docs)))
     catch ex
         nothing
     end
@@ -74,26 +72,23 @@ function get_pkg_docs(pkg::String; all::Bool = false, imported::Bool = false)::D
 end
 
 """
-    get_all_docs(all::Bool = false, imported::Bool = false)::Dict{String, Dict{String, String}}
+    get_all_docs()::Dict{String, Dict{String, String}}
 
 Return a Dict with the packages (keys) and name => docstring pairs (values)
-of all available packages.
-
-Optional keyword arguments inherited from `Base.names`:
-* If `all` is true, then the list also includes non-exported names defined in
-  the module, deprecated names, and compiler-generated names.
-* If `imported` is true, then names explicitly imported from other modules are also included.
+of all available packages which contain meaningful docstrings.
 """
-function get_all_docs(; all::Bool = false, imported::Bool = false)::Dict{String, Dict{String, String}}
+function get_all_docs()::Dict{String, Dict{String, String}}
     all_docs = Dict{String, Dict{String, String}}()
+    Keywords = [
+        "baremodule", "begin", "break", "catch", "const",
+        "continue", "do", "else", "elseif", "end", "export", "false",
+        "finally", "for", "function", "global", "if", "import",
+        "let", "local", "macro", "module", "quote", "return",
+        "struct", "true", "try", "using", "while", "abstract type",
+        "mutable struct", "primitive type", "where", "in", "isa"
+    ]
     for pkg in list_of_pkgs()
         if pkg == "Keywords"
-            Keywords = ["baremodule", "begin", "break", "catch", "const",
-                "continue", "do", "else", "elseif", "end", "export", "false",
-                "finally", "for", "function", "global", "if", "import",
-                "let", "local", "macro", "module", "quote", "return",
-                "struct", "true", "try", "using", "while", "abstract type",
-                "mutable struct", "primitive type", "where", "in", "isa"]
             pkg_docs = Dict{String, String}()
             for name in Keywords
                 if !startswith(string(name), "#")
@@ -106,7 +101,7 @@ function get_all_docs(; all::Bool = false, imported::Bool = false)::Dict{String,
             push!(all_docs, pkg => pkg_docs)
             @info "$(length(pkg_docs)) keyword names retrieved"
         else
-            pkg_docs = get_pkg_docs(pkg, all=all, imported=imported)
+            pkg_docs = get_pkg_docs(pkg)
             if length(pkg_docs) > 0
                 push!(all_docs, pkg => pkg_docs)
             end
@@ -183,7 +178,7 @@ function load_names(filename::String)::Dict{String,Vector{String}}
 end
 
 """
-    main(;all=true, imported=false)
+    main()
 
 Generate two JSON files, one with the list of names and their docstrings
 and the other with the list of names and the packages they appear in.
@@ -194,8 +189,8 @@ at least `Pkg` and `JSON`.
 The JSON files are saved, respectively in "../../data/docs/all_docs.json"
 and "../../data/docs/all_names.json", both relative to the script path.
 """
-function main(;all=true, imported=false)
-    all_docs = get_all_docs(all=all, imported=imported)
+function main()
+    all_docs = get_all_docs()
     all_names = get_all_names(all_docs)
     save_docs(joinpath(@__DIR__, "..", "data", "docs", "all_docs.json"), all_docs)
     save_names(joinpath(@__DIR__, "..", "data", "docs", "all_names.json"), all_names)
