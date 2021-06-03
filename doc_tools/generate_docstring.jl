@@ -1,7 +1,5 @@
 """
-This file contains tools to generate, and save to JSON, two Ditcs,
-one with the pairs of names and their docstrings, and the other with
-the pairs of names and the packages they appear in. See [`main`](@ref).
+Tools to generate, and save to JSON, info about packages, names and docstrings.
 
 You may either call this file from the shell, e.g. with (from the
 directory where the script resides)
@@ -18,9 +16,11 @@ julia> include("generate_docstring.jl")
 julia> main()
 ```
 
-The second option makes more sense, since one would do this after
-adding new packages to the environment, so their docstrings get added
-to the lists.
+The second option makes more sense, since one would usually activate
+and add packages to the environment, and then run `main()` to generate
+the JSON files, with the updated set of packages.
+
+See [`main`](@ref) for more details.
 """
 
 using Pkg
@@ -45,9 +45,14 @@ function list_of_pkgs()::Vector{String}
 end
 
 """
-    get_pkg_docs(pkg::String)::Dict{String, String}
+    get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
 
-Return a Dict with the names (keys) and docstrings (values) of a given package.
+Return a Dict with the names as keys, and with each value being a vector,
+where the first element indicates whether the associated name is "exported"
+or "nonexported" from the package, while the second element contains the
+corresponding docstring.
+
+Only names with meaningful docstrings are retrieved.
 """
 function get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
     pkg_docs = Dict{String, Vector{String}}()
@@ -73,10 +78,10 @@ function get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
 end
 
 """
-    get_all_docs()::Dict{String, Dict{String, String}}
+    get_all_docs()::Dict{String, Dict{String, Vector{String}}}
 
-Return a Dict with the packages (keys) and name => docstring pairs (values)
-of all available packages which contain meaningful docstrings.
+Return a Dict with the packages as keys and the info about the package
+as values (see [get_pkg_docs](@ref)).
 """
 function get_all_docs()::Dict{String, Dict{String, Vector{String}}}
     all_docs = Dict{String, Dict{String, Vector{String}}}()
@@ -113,9 +118,9 @@ function get_all_docs()::Dict{String, Dict{String, Vector{String}}}
 end
 
 """
-    save_docs(docs_filename::String, all_docs::Dict{String, Dict{String, String}})::Nothing
+    save_docs(docs_filename::String, all_docs::Dict{String, Dict{String, Vector{String}}})::Nothing
 
-Save all available documentation as a JSON file with the given filename.
+Save all available documentation info as a JSON file with the given filename.
 """
 function save_docs(filename::String, all_docs::Dict{String, Dict{String, Vector{String}}})::Nothing
     write(filename, JSON.json(all_docs, 4))
@@ -123,10 +128,10 @@ function save_docs(filename::String, all_docs::Dict{String, Dict{String, Vector{
 end
 
 """
-    load_all_docs(filename)::Dict{String, Dict{String, String}}
+    load_all_docs(filename)::Dict{String, Dict{String, Vector{String}}}
 
-Return a Dict with the packages (keys) and name => docstring pairs (values)
-of all available packages in the given JSON file.
+Return a Dict with the all the available documentation info present
+in the given JSON file.
 """
 function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
     all_docs = JSON.parsefile(filename)
@@ -158,8 +163,8 @@ end
 """
     save_names(filename::String, all_names::Dict{String,Vector{String}})::Nothing
 
-Save to a JSON file the list of names and the associated list of corresponding
-packages each name appears in.
+Save to a JSON file the list of names and the corresponding package info
+(see [`get_all_names`](@ref)).
 """
 function save_names(filename::String, all_names::Dict{String,Vector{String}})::Nothing
     write(filename, JSON.json(all_names, 4))
@@ -169,8 +174,8 @@ end
 """
     load_names(filename::String)::Nothing
 
-Save to a JSON file the list of names and the associated list of corresponding
-packages each name appears in.
+Load from the given JSON file the list of names and the corresponding package
+info (see [`get_all_names`](@ref)).
 """
 function load_names(filename::String)::Dict{String,Vector{String}}
     all_names = JSON.parsefile(filename)
@@ -181,11 +186,17 @@ end
 """
     main()
 
-Generate two JSON files, one with the list of names and their docstrings
-and the other with the list of names and the packages they appear in.
+Generate, and save to JSON files, info about packages, names and docstrings.
 
-The packages are taken from the active environment, which should contain
-at least `Pkg` and `JSON`.
+The information is generated into two Dicts, and each Dict is saved in JSON format.
+
+One Dict contains all the packages as keys, with each value being another Dict,
+containing all the names in the package as keys, with the values being a vector,
+where the first element indicates whether the name is "exported" or "nonexported"
+from the package, and the second element contains the corresponding docstring.
+
+The other Dict contains all the names as keys, with each value being a vector
+with the list of all packages the name appears in.
 
 The JSON files are saved, respectively in "../../data/docs/all_docs.json"
 and "../../data/docs/all_names.json", both relative to the script path.
