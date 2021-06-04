@@ -14,6 +14,6 @@ Please read the [Contribution Guide](CONTRIBUTING.md) to get started.
 
 ![tz demo](images/demo.gif)
 
-3. The julia command (`j`): currently, only `j?<name>` or, alternatively, `j doc <name>` is implemented, returning the docstring for `<name>`.
+3. The julia command (`j`): return the docstring for a given name, statistics about the queried names, and the list of names in a given package.
 
 ![j demo](images/j_demo.gif)

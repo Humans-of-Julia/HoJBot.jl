@@ -140,19 +140,21 @@ function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
 end
 
 """
-    get_all_names(docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Vector{String}}
+    get_all_names(docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Dict{String,String}}
 
-Return a Dict with all the names (keys) available with docstrings and all 
-the packages (values) where the given name is defined.
+Return a Dict with all the names (keys) available with docstrings and where
+the values is another Dict whose keys are the packages where the name appears
+in and the values indicate whether the name is "exported" from the packaged or
+"nonexported".
 """
-function get_all_names(all_docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Vector{String}}
-    all_names = Dict{String,Vector{String}}()
+function get_all_names(all_docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Dict{String,String}}
+    all_names = Dict{String,Dict{String,String}}()
     for (pkg, docs) in all_docs
         for name in keys(docs)
             if name in keys(all_names)
-                push!(all_names[name], pkg)
+                push!(all_names[name], pkg => all_docs[pkg][name][1])
             else
-                push!(all_names, name => [pkg])
+                push!(all_names, name => Dict(pkg => all_docs[pkg][name][1]))
             end
         end
     end
@@ -161,25 +163,25 @@ function get_all_names(all_docs::Dict{String, Dict{String, Vector{String}}})::Di
 end
 
 """
-    save_names(filename::String, all_names::Dict{String,Vector{String}})::Nothing
+    save_names(filename::String, all_names::Dict{String,Dict{String,String}})::Nothing
 
 Save to a JSON file the list of names and the corresponding package info
 (see [`get_all_names`](@ref)).
 """
-function save_names(filename::String, all_names::Dict{String,Vector{String}})::Nothing
+function save_names(filename::String, all_names::Dict{String,Dict{String,String}})::Nothing
     write(filename, JSON.json(all_names, 4))
     return nothing
 end
 
 """
-    load_names(filename::String)::Nothing
+    load_names(filename::String)::Dict{String,Vector{Vector{String}}}
 
-Load from the given JSON file the list of names and the corresponding package
-info (see [`get_all_names`](@ref)).
+Return a Dict, read from the given JSON file, that contains the list of names
+and the associated info from the packages each name appears in. (see [`get_all_names`](@ref)).
 """
-function load_names(filename::String)::Dict{String,Vector{String}}
+function load_names(filename::String)::Dict{String,Dict{String,String}}
     all_names = JSON.parsefile(filename)
-    all_names = convert(Dict{String,Vector{String}}, all_names)
+    all_names = convert(Dict{String,Dict{String,String}}, all_names)
     return all_names
 end
 
@@ -195,8 +197,9 @@ containing all the names in the package as keys, with the values being a vector,
 where the first element indicates whether the name is "exported" or "nonexported"
 from the package, and the second element contains the corresponding docstring.
 
-The other Dict contains all the names as keys, with each value being a vector
-with the list of all packages the name appears in.
+The other Dict contains all the names as keys, with each value being another Dict,
+whose keys are the packages where the name appears in and the values indicate
+whether the name is "exported" from the packaged or "nonexported".
 
 The JSON files are saved, respectively in "../../data/docs/all_docs.json"
 and "../../data/docs/all_names.json", both relative to the script path.
