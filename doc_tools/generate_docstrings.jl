@@ -33,14 +33,18 @@ Return the list of Packages available for import, discarding jll packages.
 """
 function list_of_pkgs()::Vector{String}
     pkgs = Vector{String}()
-    push!(pkgs, "Keywords")
-    push!(pkgs, "Base")
-    for pkg_info in values(Pkg.dependencies())
-        if !endswith(pkg_info.name, "_jll")
-            push!(pkgs, pkg_info.name)
-        end
+    append!(pkgs, ["Keywords", "Base",
+        "Artifacts", "Base64", "CRC32c", "Dates", "DelimitedFiles",
+        "Distributed", "Downloads", "FileWatching", "Future",
+        "InteractiveUtils", "LazyArtifacts", "LibGit2", "LinearAlgebra",
+        "Logging", "Markdown", "Mmap", "Printf", "Profile", "REPL",
+        "Random", "SHA", "Serialization", "SharedArrays", "Sockets",
+        "SparseArrays", "Statistics", "SuiteSparse", "TOML", "Test",
+        "UUIDs", "Unicode"])
+    for pkg in keys(Pkg.project().dependencies)
+        push!(pkgs, pkg)
     end
-    @info "$(length(pkgs)-2) packages found"
+    @info "$(length(pkgs)-2) packages found besides Base and the set of keywords"
     return pkgs
 end
 
@@ -58,22 +62,24 @@ function get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
     pkg_docs = Dict{String, Vector{String}}()
     num_exported = 0
     try
-        eval(Expr(:import, Expr(:., Symbol(pkg))))
-        names_exported = names(eval(Symbol(pkg)))
-        for name in names(eval(Symbol(pkg)), all=true)
-            doc = string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$(Symbol(name)))))
-            if !startswith(string(name), "#")
-                if !occursin("No documentation found", doc) || occursin("[1]", doc)
-                    exported = name in names_exported ? "exported" : "nonexported"
-                    num_exported += exported == "exported" ? 1 : 0
-                    push!(pkg_docs, string(name) => [exported, string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$name)))])
+        let
+            eval(Expr(:import, Expr(:., Symbol(pkg))))
+            names_exported = names(eval(Symbol(pkg)))
+            for name in names(eval(Symbol(pkg)), all=true)
+                doc = string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$(Symbol(name)))))
+                if !startswith(string(name), "#")
+                    if !occursin("No documentation found", doc) || occursin("[1]", doc)
+                        exported = name in names_exported ? "exported" : "nonexported"
+                        num_exported += exported == "exported" ? 1 : 0
+                        push!(pkg_docs, string(name) => [exported, string(eval(:(Base.Docs.@doc $(Symbol(pkg)).$name)))])
+                    end
                 end
             end
         end
     catch
         nothing
     end
-    @info "$(length(pkg_docs)) names retrieved ($num_exported being exported) from package $pkg"
+    @info "$(length(pkg_docs)) names retrieved ($num_exported of them exported) from package $pkg"
     return pkg_docs
 end
 
