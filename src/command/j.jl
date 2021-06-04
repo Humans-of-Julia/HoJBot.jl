@@ -47,9 +47,7 @@ end
 function help_commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "Sending help for message" m.id m.author
     reply(c, m, """
-        The `j` command shows the docstring of keywords, names in Base and names in other selected packages. Only names with meaningful help information have been recorded from each package.
-        
-        The `j` command also gives statistics on the names that have been queried, via `j stats`.
+        The `j` command shows the docstring of keywords, names in Base and names in other selected packages, as well as statistics on the names that have been queried. Only names with meaningful help information have been recorded from each package.
 
         To see which packages have been added, use `j packages`. If you would like a particular package to be added, just let us know.
 
@@ -83,10 +81,10 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
         channel = @discord get_channel(c, m.channel_id)
         all_names = load_names(joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json"))
         pkg_in_name, name = occursin('.', name) ? split(name, '.') |> u -> (first(u), last(u)) : ("", name)
+        all_docs = load_docs(joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json"))
         if name in keys(all_names)
-            all_docs = load_docs(joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json"))
             doc_in_pkgs = Dict{String, String}()
-            for pkg in all_names[name]
+            for pkg in keys(all_names[name])
                 if pkg_in_name in ("", pkg)
                     push!(doc_in_pkgs, pkg => all_docs[pkg][name][2])
                 end
@@ -170,32 +168,29 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
     all_names_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json")
     all_docs_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
     if isfile(all_names_filename) && isfile(all_docs_filename)
-        all_docs = load_docs(all_docs_filename)
         all_names = load_names(all_names_filename)
-        pkg_list = [name for (name, pkgs) in all_names if pkg in pkgs]
-        pkg_list_exported = [name for name in pkg_list if all_docs[pkg][name][1] == "exported"]
-        pkg_list_nonexported = filter(name -> name ∉ pkg_list_exported, pkg_list) 
+        pkg_list = [name for (name, d) in all_names if pkg in keys(d)]
+        pkg_list_exported = [name for name in pkg_list if all_names[name][pkg] == "exported"]
+        pkg_list_nonexported = [name for name in pkg_list if all_names[name][pkg] == "nonexported"]
         # @info pkg_list
         if length(pkg_list) > 0
-            #msg = "$(length(pkg_list)) names recorded from package `$pkg`:\n\n" *
-            #  join(sort(pkg_list), ", ") * "."
             msg = ""
             if length(pkg_list_exported) == 0
-                msg *= "**There are no exported names recorded from package `$pkg`:**\n\n"
+                msg *= "**There are no exported names on record from package `$pkg`:**\n\n"
             elseif length(pkg_list_exported) == 1
-                msg *= "**There is 1 exported name recorded from package `$pkg`:**\n\n"
+                msg *= "**There is 1 exported name on record from package `$pkg`:**\n\n"
             else
-                msg *= "**There are $(length(pkg_list_exported)) exported names recorded from package `$pkg`:**\n\n"
+                msg *= "**There are $(length(pkg_list_exported)) exported names on record from package `$pkg`:**\n\n"
             end
             if length(pkg_list_exported) > 0
                 msg *= join(sort(pkg_list_exported), ", ") * ".\n\n"
             end
             if length(pkg_list_nonexported) == 0
-                msg *= "**Besides, there aren't any nonexported names:**\n\n"
+                msg *= "**There aren't any nonexported names:**\n\n"
             elseif length(pkg_list_nonexported) == 1
-                msg *= "**Besides, there is 1 nonexported name:**\n\n"
+                msg *= "**There is 1 nonexported name:**\n\n"
             else
-                msg *= "**Besides, there are $(length(pkg_list_nonexported)) non-exported names:**\n\n"
+                msg *= "**There are $(length(pkg_list_nonexported)) non-exported names:**\n\n"
             end
             if length(pkg_list_nonexported) > 1
                 msg *= join(sort(pkg_list_nonexported), ", ") * "."

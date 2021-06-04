@@ -56,8 +56,12 @@ end
 """
     load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
 
-Return a Dict with the packages (keys) and name => docstring pairs (values)
-of all available packages in the given JSON file.
+Return the documentation info contained in the given JSON file, which should
+be in the form of a Dict, where the keys are the list of recorded packages,
+and where each value is another Dict, which contains all the names in the 
+package as keys, with the values being a vector, where the first element 
+indicates whether the name is "exported" or "nonexported" from the package,
+and the second element contains the corresponding docstring.
 """
 function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
     all_docs = JSON.parsefile(filename)
@@ -66,14 +70,17 @@ function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
 end
 
 """
-    load_names(filename::String)::Nothing
+    load_names(filename::String)::Dict{String,Dict{String,String}}
 
-Save to a JSON file the list of names and the associated list of corresponding
-packages each name appears in.
+Return a Dict, read from the given JSON file, that contains the list of names
+and the associated info from the packages each name appears in. The info
+is another Dict, where the keys are the packages where the name appears
+in, and the values indicate whether the name is "exported" from the packaged
+or "nonexported".
 """
-function load_names(filename::String)::Dict{String,Vector{String}}
+function load_names(filename::String)::Dict{String,Dict{String,String}}
     all_names = JSON.parsefile(filename)
-    all_names = convert(Dict{String,Vector{String}}, all_names)
+    all_names = convert(Dict{String,Dict{String,String}}, all_names)
     return all_names
 end
 
