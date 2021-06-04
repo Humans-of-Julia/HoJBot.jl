@@ -70,7 +70,7 @@ function get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
                 end
             end
         end
-    catch ex
+    catch
         nothing
     end
     @info "$(length(pkg_docs)) names retrieved ($num_exported being exported) from package $pkg"
