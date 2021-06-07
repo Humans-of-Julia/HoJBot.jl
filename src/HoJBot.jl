@@ -30,15 +30,13 @@ include("util.jl")
 include("discord.jl")
 include("main.jl")
 
-include("type/mod.jl")
+loadplugins()
 
-include("type/discourse.jl")
-
-include("type/ig.jl")
-
-includejlfiles("command/")
-
-includejlfiles("handlers/")
+function loadplugins()
+    includejlfiles("type/")
+    includejlfiles("command/")
+    includejlfiles("handlers/")
+end
 
 function includejlfiles(dir)
     wd = walkdir(dir)
