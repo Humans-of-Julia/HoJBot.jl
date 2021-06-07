@@ -30,23 +30,32 @@ include("util.jl")
 include("discord.jl")
 include("main.jl")
 
-include("command/tz.jl")
-include("command/j.jl")
-include("command/gm.jl")
-include("command/react.jl")
-include("command/src.jl")
-
-include("handler/reaction.jl")
-include("handler/whistle.jl")
-
 include("type/mod.jl")
-include("handler/mod.jl")
 
 include("type/discourse.jl")
-include("command/discourse.jl")
-include("handler/discourse.jl")
 
 include("type/ig.jl")
-include("command/ig.jl")
+
+loadcommands()
+
+loadhandlers()
+
+function loadcommands()
+    wd = walkdir("command/")
+    commands = first(wd)
+    close(wd)
+    foreach(commands[3]) do command
+        include(joinpath(commands[1], command))
+    end
+end
+
+function loadhandler()
+    wd = walkdir("handler/")
+    handlers = first(wd)
+    close(wd)
+    foreach(handlers[3]) do handler
+        include(joinpath(handlers[1], handler))
+    end
+end
 
 end # module
