@@ -36,25 +36,16 @@ include("type/discourse.jl")
 
 include("type/ig.jl")
 
-loadcommands()
+includejlfiles("command/")
 
-loadhandlers()
+includejlfiles("handlers/")
 
-function loadcommands()
-    wd = walkdir("command/")
+function includejlfiles(dir)
+    wd = walkdir(dir)
     commands = first(wd)
     close(wd)
     foreach(commands[3]) do command
-        include(joinpath(commands[1], command))
-    end
-end
-
-function loadhandler()
-    wd = walkdir("handler/")
-    handlers = first(wd)
-    close(wd)
-    foreach(handlers[3]) do handler
-        include(joinpath(handlers[1], handler))
+        endswith(command, ".jl") && include(joinpath(commands[1], command))
     end
 end
 
