@@ -232,7 +232,8 @@ Ensure that the path exists in a way that writing to path does not error.
 Returns the argument afterwards for composability.
 """
 function ensurepath!(fileorpath::AbstractString)
-    return mkpath(dirname(fileorpath))
+    mkpath(dirname(fileorpath))
+    return fileorpath
 end
 
 # TODO move to constants.jl later
