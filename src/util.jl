@@ -47,8 +47,7 @@ function audit(
     audit_dir = joinpath("data", "audit"),
     audit_file = joinpath(audit_dir, "$source.log")
 )
-    mkpath(audit_dir)
-    open(joinpath(audit_file); write = true, append = true) do io
+    open(ensurepath!(audit_file); write = true, append = true) do io
         println(io, "$(now(tz"UTC"))\t$name#$discriminator\t$user_id\t$message")
     end
 end
@@ -93,8 +92,7 @@ function update_names_count(
         count_names_file = joinpath(count_docs_dir, "$source.json")
     )
     
-    mkpath(count_docs_dir)
-    isfile(count_names_file) || write(count_names_file, "{}")
+    isfile(count_names_file) || write(ensurepath!(count_names_file), "{}")
     namescount = JSON.parsefile(count_names_file)
 
     info = [
@@ -225,6 +223,16 @@ julia> HoJBot.extract_command("j", ",j doc sin")
 function extract_command(command::AbstractString, s::AbstractString)
     prefix = COMMAND_PREFIX * command
     return strip(replace(s, Regex("^" * prefix * " *") => ""))
+end
+
+"""
+    ensurepath!(fileorpath::AbstractString)
+
+Ensure that the path exists in a way that writing to path does not error.
+Returns the argument afterwards for composability.
+"""
+function ensurepath!(fileorpath::AbstractString)
+    return mkpath(dirname(fileorpath))
 end
 
 # TODO move to constants.jl later

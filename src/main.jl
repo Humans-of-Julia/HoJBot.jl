@@ -101,7 +101,7 @@ help_commander(c::Client, m::Message, service) = help_commander(c, m, Val(servic
 function get_opt(username, discriminator)
     user = username * "_" * discriminator
     path = joinpath(pwd(), "data", "opt", user)
-    !isfile(path) && write(mkpath(path), "{}")
+    !isfile(path) && write(ensurepath!(path), "{}")
     return JSON.parsefile(path; dicttype=LittleDict)
 end
 
@@ -114,7 +114,7 @@ function set_opt!(username, discriminator, service, value)
     opt[string(service)] = value
     user = username * "_" * discriminator
     path = joinpath(pwd(), "data", "opt", user)
-    write(mkpath(path), json(opt))
+    write(ensurepath!(path), json(opt))
 end
 
 function opt_in(c::Client, m::Message, service)
