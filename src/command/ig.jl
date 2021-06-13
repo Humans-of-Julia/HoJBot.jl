@@ -434,8 +434,7 @@ end
 function ig_save_portfolio(user_id::UInt64, pf::IgPortfolio)
     @debug "Saving portfolio" user_id
     path = ig_file_path(user_id)
-    mkpath(dirname(path)) # ensure directory is there
-    write(path, JSON3.write(pf))
+    write(ensurepath!(path), JSON3.write(pf))
     return nothing
 end
 
@@ -448,7 +447,6 @@ end
 
 "Load a single portfolio from game file"
 function ig_load_portfolio(path::AbstractString)
-    mkpath(dirname(path)) # ensure directory is there
     bytes = read(path)
     return JSON3.read(bytes, IgPortfolio)
 end

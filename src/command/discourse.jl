@@ -109,8 +109,7 @@ end
 function discourse_save(message_id::UInt64, r::DiscourseData)
     @info "Saving discourse search data for message_id=$message_id"
     path = discourse_file_path(message_id)
-    mkpath(dirname(path)) # ensure directory is there
-    write(path, JSON3.write(r))
+    write(ensurepath!(path), JSON3.write(r))
 end
 
 function discourse_load(message_id::UInt64)
