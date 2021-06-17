@@ -7,7 +7,7 @@ const CITY_ALIASES = Dict(
 
 const DATE_TIME_PATTERNS = (
     dateformat"yyyy-mm-dd HH:MM",
-    dateformat"yyyy-mm-dd HH:MMp", # AM/PM
+    dateformat"yyyy-mm-dd HH:MM", # AM/PM
 )
 
 function commander(c::Client, m::Message, ::Val{:time_zone})
