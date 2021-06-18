@@ -24,14 +24,6 @@ import StructTypes
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 
-include("constants.jl")
-include("dispatcher.jl")
-include("util.jl")
-include("discord.jl")
-include("main.jl")
-
-loadplugins()
-
 function loadplugins()
     includejlfiles("type/")
     includejlfiles("command/")
@@ -46,5 +38,13 @@ function includejlfiles(dir)
         endswith(command, ".jl") && include(joinpath(commands[1], command))
     end
 end
+
+include("constants.jl")
+include("dispatcher.jl")
+include("util.jl")
+include("discord.jl")
+include("main.jl")
+
+loadplugins()
 
 end # module
