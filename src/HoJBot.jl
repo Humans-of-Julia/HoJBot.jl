@@ -31,7 +31,7 @@ function loadplugins()
 end
 
 function includejlfiles(dir)
-    wd = walkdir(dir)
+    wd = walkdir(joinpath(@__DIR__, dir))
     commands = first(wd)
     close(wd)
     foreach(commands[3]) do command
