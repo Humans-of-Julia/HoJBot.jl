@@ -27,7 +27,7 @@ const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 function loadplugins()
     includejlfiles("type/")
     includejlfiles("command/")
-    includejlfiles("handlers/")
+    includejlfiles("handler/")
 end
 
 function includejlfiles(dir)
