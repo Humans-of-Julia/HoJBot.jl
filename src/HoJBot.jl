@@ -18,6 +18,8 @@ using TimeZones
 using UUIDs
 using Pkg
 
+using Discord: Snowflake
+
 import HTTP
 import JSON3
 import StructTypes
@@ -33,6 +35,7 @@ include("dispatcher.jl")
 include("util.jl")
 include("discord.jl")
 include("main.jl")
+include("rights.jl")
 
 include("command/tz.jl")
 include("command/j.jl")
