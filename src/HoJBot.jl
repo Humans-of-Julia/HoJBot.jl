@@ -39,6 +39,7 @@ include("rights.jl")
 
 include("command/tz.jl")
 include("command/j.jl")
+include("command/q.jl")
 include("command/gm.jl")
 include("command/react.jl")
 include("command/src.jl")
