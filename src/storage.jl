@@ -31,7 +31,8 @@ end
 function request(storage::GuildStorage, plugin::Symbol; create=true)
     pluginstorage = get(storage.value, plugin, nothing)
     if pluginstorage === nothing && create
-       storage.value[plugin] = pluginstorage = PluginStorage()
+        pluginstorage = PluginStorage()
+        set!(storage.value, plugin, pluginstorage)
     end
     return pluginstorage
 end
