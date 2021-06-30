@@ -4,6 +4,7 @@ module Queue
 using Discord
 import ..PluginBase: handle_command
 
+const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 const PLUGIN = :queue
 const SUBCOMMANDS = Dict{String, Function}()
 
@@ -42,7 +43,7 @@ end
 function sub_leave!(c::Client, m::Message, queue)
     guildstorage = request(m)
     queue = request(guildstorage, PLUGIN, Symbol("q_"*queuename))::Vector{Snowflake}
-    push!(queue, m.author.id)
+    filter!(x->x!=m.author.id, queue)
     reply(c, m, """You have been removed from $queuename-queue.""")
     return nothing
 end
