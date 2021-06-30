@@ -15,6 +15,7 @@ function handle_command(c::Client, m::Message, ::Val{:queue})
     # @info "Message content" m.content m.author.username m.author.discriminator
     parts = split(m.content)
     @assert parts[1]==COMMAND_PREFIX * "q"
+    length(parts)<2 && sub_help(c, m) && return nothing
     subcommand = get(SUBCOMMANDS, parts[2], nothing)
     if subcommand !== nothing
         subcommand(c, m, parts[3:end]...)
@@ -23,7 +24,6 @@ function handle_command(c::Client, m::Message, ::Val{:queue})
     end
     return nothing
 end
-println(methods(handle_command))
 
 function sub_channel!(c::Client, m::Message)
     guildstorage = request(m)
