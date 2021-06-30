@@ -3,7 +3,7 @@ module Queue
 
 using Discord
 import ..PluginBase: handle_command
-using ..PluginBase
+using ..PluginBase: request, store!, persist!
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 const PLUGIN = :queue
@@ -32,7 +32,7 @@ end
 function sub_channel!(c::Client, m::Message)
     guildstorage = request(m)
     store!(guildstorage, PLUGIN, :channel, m.channel_id)
-    reply(c, m, """Restricted to #<#$(m.channel_id)>""")
+    reply(c, m, """Restricted to <#$(m.channel_id)>""")
     #grant!(m.guild_id, Val(:queuechannel), channel)
     return nothing
 end

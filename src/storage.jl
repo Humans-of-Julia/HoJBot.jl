@@ -1,12 +1,12 @@
 const DATAPATH = "data/"
 
 @enum Persistence Volatile Filesystem Channel
+
+import .PluginBase: request, persist!, store!
+
 construct_path(guild::Snowflake, plugin::Symbol; base=DATAPATH) = joinpath(base, string(guild), string(plugin)*".bin")
 
-const STORAGE = Dict{Snowflake, GuildStorage}()
-
-import PluginBase: request, persist!, store!
-
+const PluginStorage = Dict{Symbol, Any}
 struct GuildStorage
     guild::Snowflake
     # tags::T
@@ -15,8 +15,7 @@ struct GuildStorage
     GuildStorage(guildid::Snowflake) = new(guildid, Dictionary{Indices{Symbol},PluginStorage}())
 end
 
-
-const PluginStorage = Dict{Symbol, Any}
+const STORAGE = Dict{Snowflake, GuildStorage}()
 
 request(message::Message) = request(message.guild_id)
 

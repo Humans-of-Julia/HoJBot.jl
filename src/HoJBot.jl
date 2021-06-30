@@ -36,6 +36,7 @@ include("dispatcher.jl")
 include("util.jl")
 include("discord.jl")
 include("main.jl")
+include("storage.jl")
 include("rights.jl")
 
 include("command/tz.jl")
