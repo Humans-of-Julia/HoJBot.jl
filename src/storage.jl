@@ -40,10 +40,18 @@ function persist!(storage::GuildStorage)
 
 end
 
+function _exists(storage::GuildStorage, plugin::Symbol, tag)
+    pluginstorage = get(storage.plugins, plugin, nothing)
+    pluginstorage === nothing && return false
+    return get(pluginstorage, tag, nothing)!==nothing
+end
+
 function store!(storage::GuildStorage, plugin::Symbol, tag, value; overwrite=false)
-    if !overwrite && 2
-    storage.plugins[plugin][tag] = value
+    if !overwrite && _exists(storage, plugin, tag)
+        @warn "catched illegal write"
+        return nothing
     end
+    storage.plugins[plugin][tag] = value
     return nothing
 end
 
