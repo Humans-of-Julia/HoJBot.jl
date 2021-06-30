@@ -39,10 +39,13 @@ end
 
 function sub_join!(c::Client, m::Message, queuename)
     guildstorage = request(m)
-    queue = request(guildstorage, PLUGIN, qsym(queuename))::Vector{Snowflake}
-    if queue=
-    push!(queue, m.author.id)
-    reply(c, m, """You have been added to $queuename-queue. Your current position is: $(length(queue))""")
+    queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
+    if queue===nothing
+        reply(c, m, """Queue $queuename doesn't exist.""")
+    else
+        push!(queue, m.author.id)
+        reply(c, m, """You have been added to $queuename-queue. Your current position is: $(length(queue))""")
+    end
     return nothing
 end
 
@@ -63,6 +66,8 @@ function sub_list(c::Client, m::Message, queuename)
     existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
     if !existing || queue===nothing
         reply(c, m, """Queue $queuename doesn't exist.""")
+    end
+    return nothing
 end
 
 function sub_position(c::Client, m::Message)
