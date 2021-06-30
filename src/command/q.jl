@@ -40,7 +40,7 @@ end
 
 function sub_join!(c::Client, m::Message, queuename)
     guildstorage = request(m)
-    queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
+    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
     if queue===nothing
         reply(c, m, """Queue $queuename doesn't exist.""")
     else
