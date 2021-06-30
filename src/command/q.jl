@@ -2,6 +2,7 @@
 module Queue
 
 using Discord
+using Discord: Snowflake
 import ..PluginBase: handle_command
 using ..PluginBase: request, store!, persist!
 
