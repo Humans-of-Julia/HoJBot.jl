@@ -4,6 +4,7 @@ module Queue
 using Discord
 import ..PluginBase
 
+const PLUGIN = :queue
 const SUBCOMMANDS = Dict{String, Function}()
 
 register_subcommand!(keyword, func) = SUBCOMMANDS[keyword] = func
@@ -22,14 +23,17 @@ function handle_command(c::Client, m::Message, ::Val{:queue})
     return nothing
 end
 
-function sub_channel!(c::Client, m::Message, channel)
-
+function sub_channel!(c::Client, m::Message)
+    guildstorage = request(m)
+    store!(guildstorage, PLUGIN, :channel, m.channel_id)
     #grant!(m.guild_id, Val(:queuechannel), channel)
 end
 
-function sub_join!(c::Client, m::Message, queue)
-
-    reply(c, m, """You will have been added to $queue-queue""")
+function sub_join!(c::Client, m::Message, queuename)
+    guildstorage = request(m)
+    queue = request(guildstorage, PLUGIN, Symbol("q_"*queuename))::Vector{Snowflake}
+    push!(queue, m.author.id)
+    reply(c, m, """You have been added to $queuename-queue. Your current position is: $(length(queue))""")
     return nothing
 end
 

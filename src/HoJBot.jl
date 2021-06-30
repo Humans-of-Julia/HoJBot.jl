@@ -17,6 +17,7 @@ using PrettyTables
 using TimeZones
 using UUIDs
 using Pkg
+using Dictionaries
 
 using Discord: Snowflake
 
