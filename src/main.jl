@@ -92,11 +92,11 @@ function shutdown_gracefully(c::Client)
     exit(0)
 end
 
-commander(c::Client, m::Message, service) = begin
-    @info "commander" c m service
+function commander(c::Client, m::Message, service::Symbol)
+    @info "commander requested" c m service
     commander(c, m, Val(service))
 end
-help_commander(c::Client, m::Message, service) = help_commander(c, m, Val(service))
+help_commander(c::Client, m::Message, service::Symbol) = help_commander(c, m, Val(service))
 
 function get_opt(username, discriminator)
     user = username * "_" * discriminator
