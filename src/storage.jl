@@ -5,11 +5,13 @@ construct_path(guild::Snowflake, plugin::Symbol; base=DATAPATH) = joinpath(base,
 
 const STORAGE = Dict{Snowflake, GuildStorage}()
 
+import PluginBase: request, persist!, store!
+
 struct GuildStorage
     guild::Snowflake
     # tags::T
     # persistence::Dictionary{T, Persistence}
-    value::Dictionary{Indices{Symbol}, PluginStorage}
+    plugins::Dictionary{Indices{Symbol}, PluginStorage}
     GuildStorage(guildid::Snowflake) = new(guildid, Dictionary{Indices{Symbol},PluginStorage}())
 end
 
@@ -27,14 +29,30 @@ function request(guid::Snowflake)
     return guildstore
 end
 
+function request(storage::GuildStorage, plugin::Symbol; create=true)
+    pluginstorage = get(storage.value, plugin, nothing)
+    if pluginstorage === nothing && create
+       storage.value[plugin] = pluginstorage = PluginStorage()
+    end
+    return pluginstorage
+end
+
 function persist!(storage::GuildStorage)
 
 end
 
-function store!(storage::GuildStorage, plugin::Symbol, tag, value)
-    storage[plugin][tag] = value
+function store!(storage::GuildStorage, plugin::Symbol, tag, value; overwrite=false)
+    if !overwrite && 2
+    storage.plugins[plugin][tag] = value
+    end
+    return nothing
 end
 
-function request(storage::GuildStorage, plugin::Symbol, tag, Type)
-    return storage[plugin][tag]
+
+function request(storage::GuildStorage, plugin::Symbol, tag, type::Type{T})::Tuple{Bool,Union{T,Nothing}} where T
+    pluginstorage = get(storage.plugins, plugin, nothing)
+    pluginstorage === nothing && return (false, nothing)
+    tagvalue = get(pluginstorage, tag, nothing)
+    tagvalue === nothing && return (false, nothing)
+    return (true, tagvalue)
 end

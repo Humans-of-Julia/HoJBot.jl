@@ -3,12 +3,16 @@ module Queue
 
 using Discord
 import ..PluginBase: handle_command
+using ..PluginBase
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 const PLUGIN = :queue
 const SUBCOMMANDS = Dict{String, Function}()
 
 register_subcommand!(keyword, func) = SUBCOMMANDS[keyword] = func
+
+qsym(name::AbstractString) = Symbol("q_"*lowercase(name))
+qmanagesym(name::AbstractString) = Symbol("q_"*lowercase(name)*"_manage")
 
 function handle_command(c::Client, m::Message, ::Val{:queue})
     # @info "julia_commander called"
@@ -28,44 +32,68 @@ end
 function sub_channel!(c::Client, m::Message)
     guildstorage = request(m)
     store!(guildstorage, PLUGIN, :channel, m.channel_id)
+    reply(c, m, """Restricted to #<#$(m.channel_id)>""")
     #grant!(m.guild_id, Val(:queuechannel), channel)
     return nothing
 end
 
 function sub_join!(c::Client, m::Message, queuename)
     guildstorage = request(m)
-    queue = request(guildstorage, PLUGIN, Symbol("q_"*queuename))::Vector{Snowflake}
+    queue = request(guildstorage, PLUGIN, qsym(queuename))::Vector{Snowflake}
+    if queue=
     push!(queue, m.author.id)
     reply(c, m, """You have been added to $queuename-queue. Your current position is: $(length(queue))""")
     return nothing
 end
 
-function sub_leave!(c::Client, m::Message, queue)
+function sub_leave!(c::Client, m::Message, queuename)
     guildstorage = request(m)
-    queue = request(guildstorage, PLUGIN, Symbol("q_"*queuename))::Vector{Snowflake}
-    filter!(x->x!=m.author.id, queue)
-    reply(c, m, """You have been removed from $queuename-queue.""")
+    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
+    if !existing
+        reply(c, m, """Queue $queuename doesn't exist.""")
+    else
+        filter!(x->x!=m.author.id, queue)
+        reply(c, m, """You're no more waiting in $queuename""")
+    end
     return nothing
 end
 
-function sub_list(c::Client, m::Message, queue)
-    
+function sub_list(c::Client, m::Message, queuename)
+    guildstorage = request(m)
+    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
+    if !existing || queue===nothing
+        reply(c, m, """Queue $queuename doesn't exist.""")
 end
 
 function sub_position(c::Client, m::Message)
     
 end
 
-function sub_pop!(c::Client, m::Message, queue)
-    
+function sub_pop!(c::Client, m::Message, queuename)
+    guildstorage = request(m)
+    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
+    if !existing
+        reply(c, m, """Queue $queuename doesn't exist.""")
+    else
+        pop!(x->x!=m.author.id, queue)
+        reply(c, m, """You're no more waiting in $queuename""")
+    end
+    return nothing
 end
 
-function sub_create!(c::Client, m::Message, name, role)
-    
+function sub_create!(c::Client, m::Message, queuename, role)
+    guildstorage = request(m)
+    store!(guildstorage, PLUGIN, qsym(queuename), Snowflake[])
+    store!(guildstorage, PLUGIN, qmanagesym(queuename), role)
+    reply(c, m, """Queue $queuename created. <@&$role> can manage it.""")
+    return nothing
 end
 
-function sub_remove!(c::Client, m::Message, queue)
-    
+function sub_remove!(c::Client, m::Message, queuename)
+    guildstorage = request(m)
+    store!(guildstorage, PLUGIN, qsym(queuename), nothing)
+    reply(c, m, """Queue $queuename deleted.""")
+    return nothing
 end
 
 function sub_help(c::Client, m::Message)
