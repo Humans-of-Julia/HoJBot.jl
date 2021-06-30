@@ -3,13 +3,13 @@ const BOT_REPO_URL = "https://github.com/Humans-of-Julia/HoJBot.jl"
 
 const ACTIVE_COMMANDS = LittleDict([
     :gm => false,
-    :ig => true,
-    :j => true,
+    :ig => false,
+    :j => false,
     :q => true,
-    :react => true,
-    :tz => true,
-    :discourse => true,
-    :src => true,
+    :react => false,
+    :tz => false,
+    :discourse => false,
+    :src => false,
 ])
 
 const COMMANDS_NAMES = LittleDict([
