@@ -27,7 +27,7 @@ import StructTypes
 
 include("pluginbase.jl")
 
-import .PluginBase: handle_command as handler, handle_observer as commander
+import .PluginBase: handle_command as commander, handle_observer as handler
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 

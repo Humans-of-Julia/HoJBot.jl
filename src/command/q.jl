@@ -2,7 +2,7 @@
 module Queue
 
 using Discord
-import ..PluginBase
+import ..PluginBase: handle_command
 
 const PLUGIN = :queue
 const SUBCOMMANDS = Dict{String, Function}()
@@ -22,11 +22,13 @@ function handle_command(c::Client, m::Message, ::Val{:queue})
     end
     return nothing
 end
+println(methods(handle_command))
 
 function sub_channel!(c::Client, m::Message)
     guildstorage = request(m)
     store!(guildstorage, PLUGIN, :channel, m.channel_id)
     #grant!(m.guild_id, Val(:queuechannel), channel)
+    return nothing
 end
 
 function sub_join!(c::Client, m::Message, queuename)
@@ -38,7 +40,11 @@ function sub_join!(c::Client, m::Message, queuename)
 end
 
 function sub_leave!(c::Client, m::Message, queue)
-    
+    guildstorage = request(m)
+    queue = request(guildstorage, PLUGIN, Symbol("q_"*queuename))::Vector{Snowflake}
+    push!(queue, m.author.id)
+    reply(c, m, """You have been removed from $queuename-queue.""")
+    return nothing
 end
 
 function sub_list(c::Client, m::Message, queue)
