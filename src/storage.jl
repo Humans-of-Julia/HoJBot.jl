@@ -11,8 +11,8 @@ struct GuildStorage
     guild::Snowflake
     # tags::T
     # persistence::Dictionary{T, Persistence}
-    plugins::Dictionary{Indices{Symbol}, PluginStorage}
-    GuildStorage(guildid::Snowflake) = new(guildid, Dictionary{Indices{Symbol},PluginStorage}())
+    plugins::Dictionary{Symbol, PluginStorage}
+    GuildStorage(guildid::Snowflake) = new(guildid, Dictionary{Symbol,PluginStorage}())
 end
 
 const STORAGE = Dict{Snowflake, GuildStorage}()
