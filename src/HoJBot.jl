@@ -39,24 +39,24 @@ include("main.jl")
 include("storage.jl")
 include("rights.jl")
 
-include("command/tz.jl")
-include("command/j.jl")
+# include("command/tz.jl")
+# include("command/j.jl")
 include("command/q.jl")
-include("command/gm.jl")
-include("command/react.jl")
-include("command/src.jl")
+# include("command/gm.jl")
+# include("command/react.jl")
+# include("command/src.jl")
 
-include("handler/reaction.jl")
-include("handler/whistle.jl")
+# include("handler/reaction.jl")
+# include("handler/whistle.jl")
 
-include("type/mod.jl")
-include("handler/mod.jl")
+# include("type/mod.jl")
+# include("handler/mod.jl")
 
-include("type/discourse.jl")
-include("command/discourse.jl")
-include("handler/discourse.jl")
+# include("type/discourse.jl")
+# include("command/discourse.jl")
+# include("handler/discourse.jl")
 
-include("type/ig.jl")
-include("command/ig.jl")
+# include("type/ig.jl")
+# include("command/ig.jl")
 
 end # module
