@@ -24,29 +24,27 @@ import StructTypes
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 
+function loadplugins()
+    includejlfiles("type/")
+    includejlfiles("command/")
+    includejlfiles("handler/")
+end
+
+function includejlfiles(dir)
+    wd = walkdir(joinpath(@__DIR__, dir))
+    commands = first(wd)
+    close(wd)
+    foreach(commands[3]) do command
+        endswith(command, ".jl") && include(joinpath(commands[1], command))
+    end
+end
+
 include("constants.jl")
 include("dispatcher.jl")
 include("util.jl")
 include("discord.jl")
 include("main.jl")
 
-include("command/tz.jl")
-include("command/j.jl")
-include("command/gm.jl")
-include("command/react.jl")
-include("command/src.jl")
-
-include("handler/reaction.jl")
-include("handler/whistle.jl")
-
-include("type/mod.jl")
-include("handler/mod.jl")
-
-include("type/discourse.jl")
-include("command/discourse.jl")
-include("handler/discourse.jl")
-
-include("type/ig.jl")
-include("command/ig.jl")
+loadplugins()
 
 end # module
