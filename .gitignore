@@ -3,3 +3,4 @@ test/data/*
 doc_tools/Project.toml
 doc_tools/Manifest.toml
 .DS_Store
+.python-version
