@@ -1,5 +1,6 @@
 module HoJBot
 
+using Dates: include
 export start_bot
 
 using CSV
@@ -9,6 +10,7 @@ using Discord
 using Downloads
 using ExpiringCaches
 using Formatting
+using JuliaCon
 using JSON
 using OrderedCollections
 using Plots
@@ -35,6 +37,7 @@ include("command/j.jl")
 include("command/gm.jl")
 include("command/react.jl")
 include("command/src.jl")
+include("command/jc.jl")
 
 include("handler/reaction.jl")
 include("handler/whistle.jl")
