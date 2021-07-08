@@ -9,7 +9,7 @@ const ACTIVE_COMMANDS = LittleDict([
     :tz => true,
     :discourse => true,
     :src => true,
-    :jc => true,
+    :con => true,
 ])
 
 const COMMANDS_NAMES = LittleDict([
@@ -20,7 +20,7 @@ const COMMANDS_NAMES = LittleDict([
     :tz => :time_zone,
     :discourse => :discourse,
     :src => :source,
-    :jc => :julia_con,
+    :con => :julia_con,
 ])
 
 const HANDLERS_LIST = [
@@ -32,3 +32,5 @@ const HANDLERS_LIST = [
 ]
 
 const OPT_SERVICES_LIST = [:game_master, :reaction]
+
+const FAKENOW = Dates.DateTime("2020-07-29T16:30:00.000")

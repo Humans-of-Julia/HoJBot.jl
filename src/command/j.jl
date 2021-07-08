@@ -89,7 +89,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
                     push!(doc_in_pkgs, pkg => all_docs[pkg][name][2])
                 end
             end
-            
+
             if length(doc_in_pkgs) > 0
                 for (k,v) in doc_in_pkgs
                     if k in ("Base", "Keywords")
@@ -104,7 +104,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
                         reply(c, m, doc_chunk)
                     end
                 end
-                
+
                 count = update_names_count(
                     "namescount", name,
                     m.channel_id, channel.name)
@@ -134,7 +134,7 @@ function handle_doc_stats(c::Client, m::Message, captured1::AbstractString, capt
                 statsmgs = stats_namescount("namescount", name=captured2)
             end
         elseif captured1 in (" top", " bottom")
-            if captured2 != "" && all(isdigit,captured2) 
+            if captured2 != "" && all(isdigit,captured2)
                 statsmgs = stats_namescount("namescount", place=strip(captured1), number=max(1, parse(Int,captured2)))
             else
                 statsmgs = stats_namescount("namescount", place=strip(captured1))
@@ -194,7 +194,7 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
             end
             if length(pkg_list_nonexported) > 1
                 msg *= join(sort(pkg_list_nonexported), ", ") * "."
-            end              
+            end
         else
             msg = "No names found in `$pkg`."
         end
