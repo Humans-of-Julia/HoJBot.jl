@@ -90,8 +90,8 @@ function _today(c::Client, m::Message)
 
     # @info "debug 1"
 
-    track=nothing
-    terminal_links=JuliaCon.TERMINAL_LINKS
+    track = nothing
+    terminal_links = JuliaCon.TERMINAL_LINKS
 
     # @info "debug 2"
 
