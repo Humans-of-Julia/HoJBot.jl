@@ -42,7 +42,7 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
 end
 
 function _juliacon2021(c::Client, m::Message)
-    reply(c, m, "Welcome to JuliaCon 2021! Find more information on https://juliacon.org/2021/.")
+    reply(c, m, "Welcome to JuliaCon 2021! Find more information at https://juliacon.org/2021/.")
     return nothing
 end
 
