@@ -88,8 +88,6 @@ function shutdown_gracefully(c::Client)
     catch ex
         @warn "Unable to close client connection" ex
     end
-    sleep(1)
-    exit(0)
 end
 
 function commander(c::Client, m::Message, service::Symbol)
