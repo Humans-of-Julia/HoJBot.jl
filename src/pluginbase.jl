@@ -1,20 +1,45 @@
 module PluginBase
 
-export handle_command, handle_observer, request, persist!, store!
+export AbstractPlugin, init, shutdown, handle_command, handle_event, create_storage, get_storage, has_permission, grant!, revoke!
+
+abstract type AbstractPlugin end
+
+"""
+    init(::AbstractPlugin, initialized::Set{AbstractPlugin})::Bool
+
+Is called with a list of already initialized plugins and returns whether loading was successful or should be deferred
+"""
+function init(::AbstractPlugin, ::Set{AbstractPlugin})
+    return true
+end
+
+"Is called when the server is called to shutdown"
+function shutdown end
 
 "Entry point for a new command plugin, only triggers on MessageCreate"
 function handle_command end
 
 "Entry point for a new observer plugin, triggers on almost all events related to text chat"
-function handle_observer end #I suggest renaming handlers to observers since they act on observations
+function handle_event end
 
-"Persist the storage object for cross-session availability"
-function persist! end
+"""
+    create_storage(plugin::AbstractPlugin, backend::AbstractPlugin)
 
-"Request the given datapoints from the storage"
-function request end
+Returns an initialized plugin storage. Defaults to a Symbol->Any Dict
 
-"Store new datapoints in the storage"
-function store! end
+Defined by: each plugin that needs storage in any backend
+"""
+function create_storage(plugin::AbstractPlugin, backend::AbstractPlugin)
+    return Dict{Symbol, Any}()
+end
+
+"Request the plugin storage object"
+function get_storage end
+
+function has_permission end
+
+function grant! end
+
+function revoke! end
 
 end

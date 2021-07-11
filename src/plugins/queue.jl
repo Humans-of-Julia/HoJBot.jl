@@ -4,13 +4,19 @@ module Queue
 using Discord
 using Discord: Snowflake
 import ..PluginBase: handle_command
-using ..PluginBase: request, store!, persist!
+using ..PluginBase
+
+struct QueuePlugin <: AbstractPlugin end
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
-const PLUGIN = :queue
+const PLUGIN = QueuePlugin()
 const SUBCOMMANDS = Dict{String, Function}()
 
-register_subcommand!(keyword, func) = SUBCOMMANDS[keyword] = func
+
+function register_subcommand!(keyword, func)
+    SUBCOMMANDS[keyword] = func
+    fun(c::Client, m::Message, args...) = reply(c,m, "Illegal argument combination!")
+end
 
 qsym(name::AbstractString) = Symbol("q_"*lowercase(name))
 qmanagesym(name::AbstractString) = Symbol("q_"*lowercase(name)*"_manage")
@@ -20,27 +26,31 @@ function handle_command(c::Client, m::Message, ::Val{:queue})
     # @info "Message content" m.content m.author.username m.author.discriminator
     parts = split(m.content)
     @assert parts[1]==COMMAND_PREFIX * "q"
-    length(parts)<2 && sub_help(c, m) && return nothing
+    if length(parts)<2
+        sub_help(c, m)
+        return nothing
+    end
     subcommand = get(SUBCOMMANDS, parts[2], nothing)
-    if subcommand !== nothing
-        subcommand(c, m, parts[3:end]...)
-    else
+    if subcommand === nothing
         reply(c, m, "Sorry, I don't understand the request; use `q help` to see what's possible")
+    elseif !hasmethod(subcommand, ntuple(i->i==1 ? Client : i==2 ? Message : String, length(parts)))
+        reply(c, m, "Sorry, the given number of arguments is not supported")
+    else
+        subcommand(c, m, parts[3:end]...)
     end
     return nothing
 end
 
 function sub_channel!(c::Client, m::Message)
-    guildstorage = request(m)
-    store!(guildstorage, PLUGIN, :channel, m.channel_id)
+    pluginstorage = request(m, PLUGIN)
+    pluginstorage[:channel] = m.channel_id
     reply(c, m, """Restricted to <#$(m.channel_id)>""")
-    #grant!(m.guild_id, Val(:queuechannel), channel)
     return nothing
 end
 
 function sub_join!(c::Client, m::Message, queuename)
-    guildstorage = request(m)
-    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
+    pluginstorage = request(m, PLUGIN)
+    queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
         reply(c, m, """Queue $queuename doesn't exist.""")
     else
@@ -51,22 +61,27 @@ function sub_join!(c::Client, m::Message, queuename)
 end
 
 function sub_leave!(c::Client, m::Message, queuename)
-    guildstorage = request(m)
-    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
-    if !existing
+    pluginstore = request(m, PLUGIN)
+    queue = get(pluginstore, qsym(queuename), nothing)
+    if queue===nothing
         reply(c, m, """Queue $queuename doesn't exist.""")
     else
         filter!(x->x!=m.author.id, queue)
-        reply(c, m, """You're no more waiting in $queuename""")
+        reply(c, m, """You left $queuename.""")
     end
     return nothing
 end
 
 function sub_list(c::Client, m::Message, queuename)
-    guildstorage = request(m)
-    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
-    if !existing || queue===nothing
+    pluginstorage = request(m, PLUGIN)
+    queue = get(pluginstorage, qsym(queuename), nothing)
+    if queue===nothing
         reply(c, m, """Queue $queuename doesn't exist.""")
+    else
+        msg = reply(c, m, "placeholder for non-ping")
+        newtext = join("$pos: <@$name>" for (pos, name) in enumerate(queue), "\r\n")
+        fetched = fetchval(msg)
+        edit_message(c, fetched.channel_id, fetched.id, content=newtext)
     end
     return nothing
 end
@@ -76,21 +91,29 @@ function sub_position(c::Client, m::Message)
 end
 
 function sub_pop!(c::Client, m::Message, queuename)
-    guildstorage = request(m)
-    existing, queue = request(guildstorage, PLUGIN, qsym(queuename), Vector{Snowflake})
-    if !existing
+    pluginstorage = request(m, PLUGIN)
+    queue = get(pluginstorage, qsym(queuename), nothing)
+    if queue===nothing
         reply(c, m, """Queue $queuename doesn't exist.""")
+    elseif m.author.id == pluginstorage[qmanagesym(queuename)]
+        reply(c, m, """You're not allowed to manage $queuename.""")
     else
-        pop!(x->x!=m.author.id, queue)
-        reply(c, m, """You're no more waiting in $queuename""")
+        tip = pop!(queue)
+        reply(c, m, """<@$tip> is no more part of the queue""")
     end
     return nothing
 end
 
 function sub_create!(c::Client, m::Message, queuename, role)
-    guildstorage = request(m)
-    store!(guildstorage, PLUGIN, qsym(queuename), Snowflake[])
-    store!(guildstorage, PLUGIN, qmanagesym(queuename), role)
+    pluginstorage = request(m, PLUGIN)
+    qsymbol = qsym(queuename)
+    queue = get(pluginstorage, qsymbol, nothing)
+    if queue!== nothing
+        reply(c, m, """$queuename already exists.""")
+    else
+        pluginstorage[qsymbol] = Snowflake[]
+    end
+    pluginstorage[qmanagesym(queuename)] = role
     reply(c, m, """Queue $queuename created. <@&$role> can manage it.""")
     return nothing
 end
@@ -121,8 +144,12 @@ function sub_help(c::Client, m::Message)
     return nothing
 end
 
+
+
 for sub in filter!(x->startswith(string(x), "sub"), names(@__MODULE__, all=true)) 
-    register_subcommand!(string(sub)[5:end], getproperty(@__MODULE__, sub))
+    fun = getproperty(@__MODULE__, sub)
+    register_subcommand!(string(sub)[5:end], fun)
+    
 end
 
 """
