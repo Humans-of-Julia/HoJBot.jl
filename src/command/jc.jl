@@ -41,12 +41,12 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         """)
 end
 
-function _juliacon2021(c::Client, m::Message)
+function jc_juliacon2021(c::Client, m::Message)
     reply(c, m, "Welcome to JuliaCon 2021! Find more information at https://juliacon.org/2021/.")
     return nothing
 end
 
-function _now(c::Client, m::Message)
+function jc_now(c::Client, m::Message)
     current_talks = JuliaCon.get_running_talks(; now=FAKENOW)
     if isnothing(current_talks)
         @info "There is no JuliaCon program today!"
@@ -84,9 +84,12 @@ function split_pretty_table(str)
     return strings
 end
 
-function _today(c::Client, m::Message)
+function jc_today(c::Client, m::Message)
     track_schedules = JuliaCon.get_today(; now=FAKENOW)
-    isnothing(track_schedules) && (@info "There is no JuliaCon program today!"; return nothing)
+    if track_schedules === nothing
+        @info "There is no JuliaCon program today!"
+        return nothing
+    end
 
     # @info "debug 1"
 

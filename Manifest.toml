@@ -35,9 +35,9 @@ version = "1.16.0+6"
 
 [[ColorSchemes]]
 deps = ["ColorTypes", "Colors", "FixedPointNumbers", "Random", "StaticArrays"]
-git-tree-sha1 = "c8fd01e4b736013bc61b704871d20503b33ea402"
+git-tree-sha1 = "ed268efe58512df8c7e224d2e170afd76dd6a417"
 uuid = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
-version = "3.12.1"
+version = "3.13.0"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
@@ -116,7 +116,7 @@ uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [[Discord]]
 deps = ["Dates", "Distributed", "HTTP", "InteractiveUtils", "JSON", "LRUCache", "OpenTrick", "Setfield", "TimeToLive"]
-git-tree-sha1 = "ec11df0db2880f8d7eb1000df83deea22f1249d8"
+git-tree-sha1 = "d98984c58211c50d3c2313bc7e70d9e6d37d208e"
 repo-rev = "master"
 repo-url = "https://github.com/Humans-of-Julia/Discord.jl"
 uuid = "fcbf000d-02fd-53f1-af91-d952191673d3"
@@ -298,9 +298,9 @@ version = "2.1.0+0"
 
 [[JuliaCon]]
 deps = ["Dates", "Distributed", "Downloads", "JSON", "Logging", "Pkg", "Preferences", "PrettyTables", "TimerOutputs"]
-git-tree-sha1 = "2007c750b36c311df78f8faec0f2cbae3877248a"
+git-tree-sha1 = "da9d2b6a30761d33098b58dd74726b8640dd065c"
 uuid = "bfca5e61-7ca9-4d61-a82b-6df663fb0d3c"
-version = "0.3.0"
+version = "0.3.1"
 
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -530,9 +530,9 @@ version = "1.0.11"
 
 [[Plots]]
 deps = ["Base64", "Contour", "Dates", "FFMPEG", "FixedPointNumbers", "GR", "GeometryBasics", "JSON", "Latexify", "LinearAlgebra", "Measures", "NaNMath", "PlotThemes", "PlotUtils", "Printf", "REPL", "Random", "RecipesBase", "RecipesPipeline", "Reexport", "Requires", "Scratch", "Showoff", "SparseArrays", "Statistics", "StatsBase", "UUIDs"]
-git-tree-sha1 = "b93181645c1209d912d5632ba2d0094bc00703ad"
+git-tree-sha1 = "f32cd6fcd2909c2d1cdd47ce55e1394b04a66fe2"
 uuid = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-version = "1.18.1"
+version = "1.18.2"
 
 [[PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -659,9 +659,9 @@ uuid = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
-git-tree-sha1 = "896d55218776ab8f23fb7b222a5a4a946d4aafc2"
+git-tree-sha1 = "a43a7b58a6e7dc933b2fa2e0ca653ccf8bb8fd0e"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.2.5"
+version = "1.2.6"
 
 [[Statistics]]
 deps = ["LinearAlgebra", "SparseArrays"]
