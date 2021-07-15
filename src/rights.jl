@@ -1,28 +1,3 @@
-const Functionality = Val
-const PATHBASE = "data/permissions/"
-
-has_access(guid::Snowflake, member::Member, task::Functionality) = has_access(guid, member.roles, task)
-
-function has_access(guid::Snowflake, roles::Vector{Snowflake}, ::Functionality{Task}) where Task
-    guildperms = PERMISSIONS[guid]
-    return !isdisjoint(guildperms[Task], roles)
-end
-
-function grant!(guid::Snowflake, role::Snowflake, ::Functionality{Task}) where Task
-    guildperms = PERMISSIONS[guid]
-    push!(guildperms[Task], role)
-    save(guid, guildperms)
-end
-
-function revoke!(guid::Snowflake, role::Snowflake, ::Functionality{Task}) where Task
-    guildperms = PERMISSIONS[guid]
-    delete!(guildperms[Task], role)
-    save(guid, guildperms)
-end
-
-"""GuildID->(Functionality->[permitted roles])"""
-const PERMISSIONS = Dict{Snowflake,Dict{Symbol,Set{Snowflake}}}()
-
 
 function load()
     isdir(PATHBASE) || return

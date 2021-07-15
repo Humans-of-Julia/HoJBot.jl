@@ -3,7 +3,6 @@ module Queue
 
 using Discord
 using Discord: Snowflake
-import ..PluginBase: handle_command
 using ..PluginBase
 
 struct QueuePlugin <: AbstractPlugin end
@@ -12,6 +11,9 @@ const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 const PLUGIN = QueuePlugin()
 const SUBCOMMANDS = Dict{String, Function}()
 
+function __init__()
+    register!(PLUGIN)
+end
 
 function register_subcommand!(keyword, func)
     SUBCOMMANDS[keyword] = func
@@ -21,7 +23,12 @@ end
 qsym(name::AbstractString) = Symbol("q_"*lowercase(name))
 qmanagesym(name::AbstractString) = Symbol("q_"*lowercase(name)*"_manage")
 
-function handle_command(c::Client, m::Message, ::Val{:queue})
+function PluginBase.initialize(client::Client, ::QueuePlugin)
+    add_command!(client, :q, (c, m) -> handle_command(c, m, PLUGIN))
+    return true
+end
+
+function PluginBase.handle_command(c::Client, m::Message, ::QueuePlugin)
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     parts = split(m.content)
@@ -47,6 +54,18 @@ function sub_channel!(c::Client, m::Message)
     reply(c, m, """Restricted to <#$(m.channel_id)>""")
     return nothing
 end
+
+(Var{:q}, Var{:join!}, queuename::String)#`q join! <queue>` adds user to queue
+(Var{:q}, Var{:leave!}, queuename::String)# `q leave! <queue>` removes user from queue
+(Var{:q}, Var{:list}, queuename::String)# `q list <queue>` lists the specified queue
+(Var{:q}, Var{:position})# `q position` shows the current position in every queue
+(Var{:q}, Var{:pop!}, queuename::String)# `q pop! <name>` removes the user with the first position from the queue
+(Var{:q}, Var{:create!}, queuename::String, role::Snowflake)# `q create! <name> <role>` creates a new queue that is managed by <role>
+(Var{:q}, Var{:channel!}, queuename::String)# `q channel! <queue>` set the channel that lists the queues
+(Var{:q}, Var{:remove!}, queuename::String)# `q remove! <name>` removes an existing queue
+(Var{:q}, Var{:help})# `q help` returns this help
+
+
 
 function sub_join!(c::Client, m::Message, queuename)
     pluginstorage = request(m, PLUGIN)
@@ -98,7 +117,7 @@ function sub_pop!(c::Client, m::Message, queuename)
     elseif m.author.id == pluginstorage[qmanagesym(queuename)]
         reply(c, m, """You're not allowed to manage $queuename.""")
     else
-        tip = pop!(queue)
+        tip = popfirst!(queue)
         reply(c, m, """<@$tip> is no more part of the queue""")
     end
     return nothing

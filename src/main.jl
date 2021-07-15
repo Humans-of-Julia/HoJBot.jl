@@ -26,8 +26,6 @@ function help_message()
 end
 
 function start_bot(;
-    commands=ACTIVE_COMMANDS,
-    handlers=HANDLERS_LIST,
     run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
@@ -36,33 +34,12 @@ function start_bot(;
         presence=(game=(name="HoJ", type=AT_GAME),),
         prefix=COMMAND_PREFIX,
     )
-    loaded_plugins = init_plugins!()
-    init_handlers!(client, handlers)
-    init_commands!(client, commands)
+    PluginBase.initialize_plugins!(client)
     # add_help!(client; help = help_message())
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
-end
-
-function init_plugins!()
-    initialized = Set{PluginBase.AbstractPlugin}()
-    waiting = Type{PluginBase.AbstractPlugin}[PluginBase.AbstractPlugin]
-    while !isempty(waiting)
-        current = pop!(waiting)
-        if isabstracttype(current)
-            append!(waiting, subtypes(current))
-        else
-            pluginstance = current()
-            success = PluginBase.init(pluginstance, initialized)
-            if success
-                push!(initialized, pluginstance)
-            else
-                push!(waiting, current)
-            end
-        end
-    end
-    return initialized
+    PluginBase.shutdown()
 end
 
 function init_handlers!(client::Client, handlers)
