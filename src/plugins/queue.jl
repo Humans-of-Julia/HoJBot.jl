@@ -7,21 +7,19 @@ using ..PluginBase
 
 struct QueuePlugin <: AbstractPlugin end
 
-const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 const PLUGIN = QueuePlugin()
-const SUBCOMMANDS = Dict{String, Function}()
+
+struct ManageQueue <: AbstractPermission
+    queue::Symbol
+end
+
+struct CreateQueue <: AbstractPermission end
 
 function __init__()
     register!(PLUGIN)
 end
 
-function register_subcommand!(keyword, func)
-    SUBCOMMANDS[keyword] = func
-    fun(c::Client, m::Message, args...) = reply(c,m, "Illegal argument combination!")
-end
-
 qsym(name::AbstractString) = Symbol("q_"*lowercase(name))
-qmanagesym(name::AbstractString) = Symbol("q_"*lowercase(name)*"_manage")
 
 function PluginBase.initialize(client::Client, ::QueuePlugin)
     add_command!(client, :q, (c, m) -> handle(c, m))
@@ -29,30 +27,39 @@ function PluginBase.initialize(client::Client, ::QueuePlugin)
 end
 
 function handle(c::Client, m::Message)
-    # @info "julia_commander called"
-    # @info "Message content" m.content m.author.username m.author.discriminator
-    parts = split(m.content)
-    @assert parts[1]==COMMAND_PREFIX * "q"
-    if length(parts)<2
-        sub_help(c, m)
-        return nothing
-    end
-    subcommand = get(SUBCOMMANDS, parts[2], nothing)
-    if subcommand === nothing
-        reply(c, m, "Sorry, I don't understand the request; use `q help` to see what's possible")
-    elseif !hasmethod(subcommand, ntuple(i->i==1 ? Client : i==2 ? Message : String, length(parts)))
-        reply(c, m, "Sorry, the given number of arguments is not supported")
+    isenabled(m.guild_id, m.channel_id, PLUGIN) || return
+    args = split(m.content)
+    length(args) < 2 && reply(c, m, "you need a subcommand")
+    subcommand = args[2]
+    if subcommand == "join!"
+        reply(c, m, sub_join!(m.guild_id, m.author.id, args[3]))
+    elseif subcommand == "leave!"
+        reply(c, m, sub_leave!(m.guild_id, m.author.id, args[3]))
+    elseif subcommand == "list"
+        # reply(c, m, sub_list(m.guild_id, queuename))
+    elseif subcommand == "position"
+        # reply(c, m, sub_position(m.guild_id, m.channel_id, queuename))
+    elseif subcommand == "pop!"
+        if !is_permitted(c, m, ManageQueue(Symbol(args[3])))
+            reply(c, m, "you are not allowed to manage queue $(args[3])")
+        else
+            reply(c, m, sub_pop!(m.guild_id, args[3]))
+        end
+    elseif subcommand == "create!"
+        if !is_permitted(c, m, CreateQueue())
+            reply(c, m, "you are not allowed to create queues")
+        else
+            reply(c, m, sub_create!(m.guild_id, args[3], parse(Snowflake, args[4])))
+        end
+    elseif subcommand == "remove!"
+        if !is_permitted(c, m, CreateQueue())
+            reply(c, m, "you are not allowed to remove queues")
+        else
+            reply(c, m, sub_remove!(m.guild_id, args[3]))
+        end
     else
-        subcommand(c, m, parts[3:end]...)
+        reply(c, m, help_message)
     end
-    return nothing
-end
-
-function sub_channel!(c::Client, m::Message)
-    pluginstorage = get_storage(m, PLUGIN)
-    pluginstorage[:channel] = m.channel_id
-    reply(c, m, """Restricted to <#$(m.channel_id)>""")
-    return nothing
 end
 
 (Val{:q}, Val{:join!}, queuename::String)#`q join! <queue>` adds user to queue
@@ -61,41 +68,42 @@ end
 (Val{:q}, Val{:position})# `q position` shows the current position in every queue
 (Val{:q}, Val{:pop!}, queuename::String)# `q pop! <name>` removes the user with the first position from the queue
 (Val{:q}, Val{:create!}, queuename::String, role::Snowflake)# `q create! <name> <role>` creates a new queue that is managed by <role>
-(Val{:q}, Val{:channel!}, queuename::String)# `q channel! <queue>` set the channel that lists the queues
 (Val{:q}, Val{:remove!}, queuename::String)# `q remove! <name>` removes an existing queue
 (Val{:q}, Val{:help})# `q help` returns this help
 
 
 
-function sub_join!(c::Client, m::Message, queuename)
-    pluginstorage = get_storage(m, PLUGIN)
+function sub_join!(guid::Snowflake, user::Snowflake, queuename::String)
+    pluginstorage = get_storage(guid, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
-        reply(c, m, """Queue $queuename doesn't exist.""")
-    else
-        push!(queue, m.author.id)
-        reply(c, m, """You have been added to $queuename-queue. Your current position is: $(length(queue))""")
+        return "Queue $queuename does not exist."
+    elseif (pos=indexin(user, queue)[])!==nothing
+        return "You already are enqueued. Your current position is: $pos"
+    else    
+        push!(queue, user)
+        return "You have been added to $queuename-queue. Your current position is: $(length(queue))"
     end
-    return nothing
 end
 
-function sub_leave!(c::Client, m::Message, queuename)
-    pluginstore = get_storage(m, PLUGIN)
-    queue = get(pluginstore, qsym(queuename), nothing)
+function sub_leave!(guid::Snowflake, user::Snowflake, queuename::String)
+    pluginstorage = get_storage(guid, PLUGIN)
+    queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
-        reply(c, m, """Queue $queuename doesn't exist.""")
-    else
-        filter!(x->x!=m.author.id, queue)
-        reply(c, m, """You left $queuename.""")
+        return "Queue $queuename does not exist."
+    elseif (pos=indexin(user, queue)[])===nothing
+        return "You haven't been in the queue. Nothing changed."
+    else    
+        deleteat!(queue, pos)
+        return "You left $queuename."
     end
-    return nothing
 end
 
 function sub_list(c::Client, m::Message, queuename)
     pluginstorage = get_storage(m, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
-        reply(c, m, """Queue $queuename doesn't exist.""")
+        reply(c, m, """Queue $queuename does not exist.""")
     else
         msg = reply(c, m, "placeholder for non-ping")
         newtext = join("$pos: <@$name>" for (pos, name) in enumerate(queue), "\r\n")
@@ -109,66 +117,52 @@ function sub_position(c::Client, m::Message)
     
 end
 
-function sub_pop!(c::Client, m::Message, queuename)
-    pluginstorage = get_storage(m, PLUGIN)
+function sub_pop!(guid::Snowflake, queuename::String)
+    pluginstorage = get_storage(guid, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
-        reply(c, m, """Queue $queuename doesn't exist.""")
-    elseif m.author.id == pluginstorage[qmanagesym(queuename)]
-        reply(c, m, """You're not allowed to manage $queuename.""")
+        return "Queue $queuename does not exist."
     else
         tip = popfirst!(queue)
-        reply(c, m, """<@$tip> is no more part of the queue""")
+        return "<@$tip> is no more part of the queue"
     end
-    return nothing
 end
 
-function sub_create!(c::Client, m::Message, queuename, role)
+function sub_create!(guid::Snowflake, queuename::String, role::Snowflake)
     pluginstorage = get_storage(m, PLUGIN)
     qsymbol = qsym(queuename)
     queue = get(pluginstorage, qsymbol, nothing)
     if queue !== nothing
-        reply(c, m, """$queuename already exists.""")
+        return "Queue $queuename already exists."
     else
         pluginstorage[qsymbol] = Snowflake[]
+        grant!(guid, role, ManageQueue(Symbol(queuename)))
+        return "Queue $queuename created. <@&$role> can manage it."
     end
-    pluginstorage[qmanagesym(queuename)] = role
-    reply(c, m, """Queue $queuename created. <@&$role> can manage it.""")
-    return nothing
 end
 
-function sub_remove!(c::Client, m::Message, queuename)
+function sub_remove!(guid::Snowflake, queuename::String)
     pluginstorage = get_storage(m, PLUGIN)
     delete!(pluginstorage, qsym(queuename))
+    revokeall!(guid, ManageQueue(Symbol(quename)))
     reply(c, m, """Queue $queuename deleted.""")
     return nothing
 end
 
-function sub_help(c::Client, m::Message)
-    # @info "Sending help for message" m.id m.author
-    reply(c, m, """
-        The `q` command manages the queues.
+function help_message()
+    return """
+    The `q` command manages the queues.
 
-        Here is the list of all available `q` commands and their use:
-        `q join! <queue>` adds user to queue
-        `q leave! <queue>` removes user from queue
-        `q list <queue>` lists the specified queue
-        `q position` shows the current position in every queue
-        `q pop! <name>` removes the user with the first position from the queue
-        `q create! <name> <role>` creates a new queue that is managed by <role>
-        `q channel! <channel>` set the channel that lists the queues
-        `q remove! <name>` removes an existing queue
-        `q help` returns this help
-        """)
-    return nothing
-end
-
-
-
-for sub in filter!(x->startswith(string(x), "sub"), names(@__MODULE__, all=true)) 
-    fun = getproperty(@__MODULE__, sub)
-    register_subcommand!(string(sub)[5:end], fun)
-    
+    Here is the list of all available `q` commands and their use:
+    `q join! <queue>` adds user to queue
+    `q leave! <queue>` removes user from queue
+    `q list <queue>` lists the specified queue
+    `q position` shows the current position in every queue
+    `q pop! <name>` removes the user with the first position from the queue
+    `q create! <name> <role>` creates a new queue that is managed by <role>
+    `q remove! <name>` removes an existing queue
+    `q help` returns this help
+    """
 end
 
 """

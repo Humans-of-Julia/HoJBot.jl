@@ -19,25 +19,41 @@ function PluginBase.is_permitted(client::Client, m::Message, perm::AbstractPermi
     check_admin(client, m) || is_permitted(m.guild_id, m.member.roles, perm)
 end
 
-function PluginBase.is_permitted(client::Client, guid::Snowflake, roles::Vector{Snowflake}, perm::AbstractPermission)
+function PluginBase.is_permitted(guid::Snowflake, roles::Vector{Snowflake}, perm::AbstractPermission)
     guildperms = get_storage(guid, PLUGIN)
-    return !isdisjoint(guildperms[perm], roles)
+    permittedroles = get(guildperms, perm, nothing)
+    return permittedroles !== nothing && !isdisjoint(roles, permittedroles)
 end
 
-function PluginBase.is_permitted(client::Client, guid::Snowflake, role::Snowflake, perm::AbstractPermission)
+function PluginBase.is_permitted(guid::Snowflake, role::Snowflake, perm::AbstractPermission)
     guildperms = get_storage(guid, PLUGIN)
-    return role in guildperms[perm]
+    permittedroles = get(guildperms, perm, nothing)
+    return permittedroles !== nothing && role in permittedroles
 end
 
-function PluginBase.grant!(client::Client, guid::Snowflake, role::Snowflake, perm::AbstractPermission)
+function PluginBase.grant!(guid::Snowflake, role::Snowflake, perm::AbstractPermission)
     guildperms = get_storage(guid, PLUGIN)
-    push!(guildperms[perm], role)
+    permittedroles = get(guildperms, perm, nothing)
+    if permittedroles===nothing
+        guildperms[perm] = Set{Snowflake}(role)
+    else
+        push!(permittedroles, role)
+    end
 end
 
-function PluginBase.revoke!(client::Client, guid::Snowflake, role::Snowflake, perm::AbstractPermission)
+function PluginBase.revoke!(guid::Snowflake, role::Snowflake, perm::AbstractPermission)
     guildperms = get_storage(guid, PLUGIN)
-    delete!(guildperms[perm], role)
+    permittedroles = get(guildperms, perm, nothing)
+    permittedroles !== nothing || return
+    delete!(permittedroles, role)
+    isempty(permittedroles) && delete!(guildperms, perm)
 end
+
+function PluginBase.revokeall!(guid::Snowflake, perm::AbstractPermission)
+    guildperms = get_storage(guid, PLUGIN)
+    delete!(guildperms, perm)
+end
+
 function check_admin(client::Client, m::Message)
     guild = Discord.get_guild(client, m.guild_id)
     channel = Discord.get_channel(client, m.channel_id)

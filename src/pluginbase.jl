@@ -1,6 +1,6 @@
 module PluginBase
 
-export AbstractPlugin, AbstractPermission, is_permitted, grant!, revoke!, isenabled
+export AbstractPlugin, AbstractPermission, is_permitted, grant!, revoke!, revokeall!, isenabled
 export register!, initialize!, shutdown!, create_storage #extend everwhere
 export get_storage #extend in new storage backends
 export identifier, plugin_by_identifier
@@ -116,6 +116,8 @@ function is_permitted end
 function grant! end
 
 function revoke! end
+
+function revokeall! end
 
 """
     isenabled(guid::Snowflake, ::AbstractPlugin)
