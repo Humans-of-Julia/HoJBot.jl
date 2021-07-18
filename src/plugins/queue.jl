@@ -106,7 +106,7 @@ function sub_list(c::Client, m::Message, queuename)
         reply(c, m, """Queue $queuename does not exist.""")
     else
         msg = reply(c, m, "placeholder for non-ping")
-        newtext = join("$pos: <@$name>" for (pos, name) in enumerate(queue), "\r\n")
+        newtext = join(("$pos: <@$name>" for (pos, name) in enumerate(queue)), "\r\n")
         fetched = fetchval(msg)
         edit_message(c, fetched.channel_id, fetched.id, content=newtext)
     end
