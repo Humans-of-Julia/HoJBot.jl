@@ -19,7 +19,7 @@ function __init__()
     register!(PLUGIN)
 end
 
-qsym(name::AbstractString) = Symbol("q_"*lowercase(name))
+qsym(name::AbstractString) = Symbol(lowercase(name))
 
 function PluginBase.initialize(client::Client, ::QueuePlugin)
     add_command!(client, :q, (c, m) -> handle(c, m))
@@ -38,7 +38,7 @@ function handle(c::Client, m::Message)
     elseif subcommand == "list"
         sub_list(c, m, args[3])
     elseif subcommand == "position"
-        # reply(c, m, sub_position(m.guild_id, m.channel_id, queuename))
+        reply(c, m, sub_position(m.guild_id, m.author.id))
     elseif subcommand == "pop!"
         if !is_permitted(c, m, ManageQueue(Symbol(args[3])))
             reply(c, m, "you are not allowed to manage queue $(args[3])")
@@ -62,14 +62,14 @@ function handle(c::Client, m::Message)
     end
 end
 
-(Val{:q}, Val{:join!}, queuename::String)#`q join! <queue>` adds user to queue
-(Val{:q}, Val{:leave!}, queuename::String)# `q leave! <queue>` removes user from queue
-(Val{:q}, Val{:list}, queuename::String)# `q list <queue>` lists the specified queue
-(Val{:q}, Val{:position})# `q position` shows the current position in every queue
-(Val{:q}, Val{:pop!}, queuename::String)# `q pop! <name>` removes the user with the first position from the queue
-(Val{:q}, Val{:create!}, queuename::String, role::Snowflake)# `q create! <name> <role>` creates a new queue that is managed by <role>
-(Val{:q}, Val{:remove!}, queuename::String)# `q remove! <name>` removes an existing queue
-(Val{:q}, Val{:help})# `q help` returns this help
+# (Val{:q}, Val{:join!}, queuename::String)#`q join! <queue>` adds user to queue
+# (Val{:q}, Val{:leave!}, queuename::String)# `q leave! <queue>` removes user from queue
+# (Val{:q}, Val{:list}, queuename::String)# `q list <queue>` lists the specified queue
+# (Val{:q}, Val{:position})# `q position` shows the current position in every queue
+# (Val{:q}, Val{:pop!}, queuename::String)# `q pop! <name>` removes the user with the first position from the queue
+# (Val{:q}, Val{:create!}, queuename::String, role::Snowflake)# `q create! <name> <role>` creates a new queue that is managed by <role>
+# (Val{:q}, Val{:remove!}, queuename::String)# `q remove! <name>` removes an existing queue
+# (Val{:q}, Val{:help})# `q help` returns this help
 
 
 
@@ -113,8 +113,10 @@ function sub_list(c::Client, m::Message, queuename::String)
     return nothing
 end
 
-function sub_position(c::Client, m::Message)
-    
+function sub_position(guid::Snowflake, user::Snowflake)
+    pluginstorage = get_storage(guid, PLUGIN)
+    queues = keys(pluginstorage)
+    return join(("$q: position $(only(indexin(user, pluginstorage[q])))" for q in queues), "\r\n")
 end
 
 function sub_pop!(guid::Snowflake, queuename::String)
@@ -165,28 +167,4 @@ function help_message()
     """
 end
 
-"""
-q
-    [manager]
-    create #name [#role...] // legt neue Queue an
-    remove #name
-    
-    [#role...]
-    pop // entfernt den User mit der ersten Position von der Liste (zb nach Typing)
-    
-    [everyone]
-    help // gibt Hilfe aus
-    join #queue // fügt USER zur Liste hinzu
-    leave #queue // entfernt USER von Liste
-    list #queue // gibt Liste aus
-    position // zeigt eigene Position in allen queues
-
-
-
-
-
-
-
-
-"""
 end
