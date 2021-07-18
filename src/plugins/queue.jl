@@ -24,11 +24,11 @@ qsym(name::AbstractString) = Symbol("q_"*lowercase(name))
 qmanagesym(name::AbstractString) = Symbol("q_"*lowercase(name)*"_manage")
 
 function PluginBase.initialize(client::Client, ::QueuePlugin)
-    add_command!(client, :q, (c, m) -> handle_command(c, m, PLUGIN))
+    add_command!(client, :q, (c, m) -> handle(c, m))
     return true
 end
 
-function PluginBase.handle_command(c::Client, m::Message, ::QueuePlugin)
+function handle(c::Client, m::Message)
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
     parts = split(m.content)
