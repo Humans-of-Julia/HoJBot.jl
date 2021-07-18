@@ -9,7 +9,7 @@ const ACTIVE_COMMANDS = LittleDict([
     :tz => true,
     :discourse => true,
     :src => true,
-    :con => true,
+    :jc => true,
 ])
 
 const COMMANDS_NAMES = LittleDict([
@@ -20,7 +20,7 @@ const COMMANDS_NAMES = LittleDict([
     :tz => :time_zone,
     :discourse => :discourse,
     :src => :source,
-    :con => :julia_con,
+    :jc => :julia_con,
 ])
 
 const HANDLERS_LIST = [

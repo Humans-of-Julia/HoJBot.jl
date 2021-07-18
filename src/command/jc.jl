@@ -2,9 +2,9 @@
 # JuliaCon.debugmode(true)
 
 function commander(c::Client, m::Message, ::Val{:julia_con})
-    startswith(m.content, COMMAND_PREFIX * "con") || return
+    startswith(m.content, COMMAND_PREFIX * "jc ") || m.content == COMMAND_PREFIX * "jc" || return
 
-    regex = Regex(COMMAND_PREFIX * raw"con( help| juliacon2021| now| today)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"jc( help| juliacon2021| now| today)? *(.*)$")
 
     matches = match(regex, m.content)
 
@@ -20,19 +20,19 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
         @info "today was required" m.content m.author.username m.author.discriminator
         jc_today(c, m)
     else
-        reply(c, m, "Sorry, are you looking for information on JuliaCon 2021? Please check out `con help`")
+        reply(c, m, "Sorry, are you looking for information on JuliaCon 2021? Please check out `jc help`")
     end
     return nothing
 end
 
 function help_commander(c::Client, m::Message, ::Val{:julia_con})
     reply(c, m, """
-        How to look for information about JuliaCon 2021 with the `con` command:
+        How to look for information about JuliaCon 2021 with the `jc` command:
         ```
-        con help
-        con juliacon2021
-        con now
-        con today
+        jc help
+        jc juliacon2021
+        jc now
+        jc today
         ```
         `help` prints this message
         `juliacon2021` greets the users and provide a link to the official website

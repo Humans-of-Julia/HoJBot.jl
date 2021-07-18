@@ -37,7 +37,7 @@ include("command/j.jl")
 include("command/gm.jl")
 include("command/react.jl")
 include("command/src.jl")
-include("command/con.jl")
+include("command/jc.jl")
 
 include("handler/reaction.jl")
 include("handler/whistle.jl")
