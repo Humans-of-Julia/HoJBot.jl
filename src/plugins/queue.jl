@@ -21,7 +21,7 @@ end
 
 qsym(name::AbstractString) = Symbol(lowercase(name))
 
-function PluginBase.initialize(client::Client, ::QueuePlugin)
+function PluginBase.initialize!(client::Client, ::QueuePlugin)
     add_command!(client, :q, (c, m) -> handle(c, m))
     return true
 end
@@ -144,7 +144,7 @@ function sub_create!(guid::Snowflake, queuename::String, role::Snowflake)
 end
 
 function sub_remove!(guid::Snowflake, queuename::String)
-    pluginstorage = get_storage(m, PLUGIN)
+    pluginstorage = get_storage(guid, PLUGIN)
     delete!(pluginstorage, qsym(queuename))
     revokeall!(guid, ManageQueue(Symbol(queuename)))
     return "Queue $queuename deleted."

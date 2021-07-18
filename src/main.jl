@@ -6,25 +6,6 @@ function __init__()
     start_bot()
 end
 
-function help_message()
-    act_commands = collect(keys(filter(c -> c.second, ACTIVE_COMMANDS)))
-    names = collect(values(filter(c -> ACTIVE_COMMANDS[c.first], COMMANDS_NAMES)))
-
-    commands = mapreduce(c -> string(c) * "\n", *, act_commands)
-    opt = mapreduce(c -> string(c) * "\n", *, filter(c -> c ∈ names, OPT_SERVICES_LIST))
-    str = """
-    ```
-    HoJBot accepts the following commands:
-    ```
-    $commands
-    ```
-    The following services are opt-in. Please check the related help command (`service help` for any `service` below).
-    ```
-    $opt
-    """
-    return str
-end
-
 function start_bot(;
     run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
 )

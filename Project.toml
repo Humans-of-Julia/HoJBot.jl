@@ -4,10 +4,12 @@ authors = ["Tom Kwong <tk3369@gmail.com> and contributors"]
 version = "0.1.0"
 
 [deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Discord = "fcbf000d-02fd-53f1-af91-d952191673d3"
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
+Pretend = "8ad1c615-040c-41b0-a18f-ae9e9fd09b5b"
 StructTypes = "856f2bd8-1eba-4b0a-8007-ebc267875bd4"
 
 [compat]

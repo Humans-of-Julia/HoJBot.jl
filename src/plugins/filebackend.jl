@@ -34,7 +34,7 @@ function __init__()
     set_default!(PLUGIN)
 end
 
-function PluginBase.initialize(client::Client, p::AbstractStoragePlugin)
+function PluginBase.initialize!(client::Client, p::AbstractStoragePlugin)
     for (guid, storage) in pairs(STORAGE)
         for p in keys(storage.plugins)
             persist!(guid, p)
@@ -90,7 +90,7 @@ function persist!(guid::Snowflake, p::AbstractPlugin)
     end
 end
 
-function PluginBase.shutdown(::FileBackend)
+function PluginBase.shutdown!(::FileBackend)
     for (guid, storage) in pairs(STORAGE)
         for p in keys(storage.plugins)
             persist!(guid, p)
