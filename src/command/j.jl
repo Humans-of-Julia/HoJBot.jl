@@ -25,7 +25,7 @@ end
 function commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
-    startswith(m.content, COMMAND_PREFIX * "j") || return
+    startswith(m.content, COMMAND_PREFIX * "j ") || startswith(m.content, COMMAND_PREFIX * "j? ") || m.content == COMMAND_PREFIX * "j" || return
     regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages| package| stats| top| bottom)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
