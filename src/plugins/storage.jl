@@ -1,9 +1,11 @@
 module Storage
 
+using StructTypes
 using Discord
 using Discord: Snowflake
 using ..PluginBase
 export AbstractStoragePlugin, set_default!
+export StructTypes
 
 abstract type AbstractStoragePlugin <: AbstractPlugin end
 
@@ -34,5 +36,11 @@ end
 function set_default!(storage::AbstractStoragePlugin)
     _FALLBACK_END[] = storage
 end
+
+
+StructTypes.StructType(::Type{<:AbstractPlugin}) = StructTypes.CustomStruct()
+StructTypes.lowertype(::Type{<:AbstractPlugin}) = String
+StructTypes.lower(x::AbstractPlugin) = identifier(x)
+StructTypes.construct(::Type{AbstractPlugin}, x::String) = plugin_by_identifier(x)
 
 end

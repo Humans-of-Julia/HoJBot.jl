@@ -2,10 +2,13 @@ module FileStorage
 
 const DATAPATH = "data/"
 
+using Discord
+using Discord: Snowflake
 using ..PluginBase
 using ..Storage
 using JSON3
 using Dictionaries
+using ..HoJBot: ensurepath!
 
 struct FileBackend <: AbstractStoragePlugin end
 
@@ -69,8 +72,8 @@ function load!(guid::Snowflake, p::AbstractPlugin)
     if pluginstorage !== nothing
         @warn "overwriting $p storage for guild $guid"
     else
-        pluginstorage = create_storage(p, backend)
-        set!(guildstore.plugins, p, storage)
+        pluginstorage = create_storage(p, PLUGIN)
+        set!(guildstore.plugins, p, pluginstorage)
     end
     open(target) do io
         StructTypes.constructfrom!(pluginstorage, JSON3.read(io))

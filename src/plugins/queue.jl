@@ -131,7 +131,7 @@ function sub_pop!(guid::Snowflake, queuename::String)
 end
 
 function sub_create!(guid::Snowflake, queuename::String, role::Snowflake)
-    pluginstorage = get_storage(m, PLUGIN)
+    pluginstorage = get_storage(guid, PLUGIN)
     qsymbol = qsym(queuename)
     queue = get(pluginstorage, qsymbol, nothing)
     if queue !== nothing
@@ -146,9 +146,8 @@ end
 function sub_remove!(guid::Snowflake, queuename::String)
     pluginstorage = get_storage(m, PLUGIN)
     delete!(pluginstorage, qsym(queuename))
-    revokeall!(guid, ManageQueue(Symbol(quename)))
-    reply(c, m, """Queue $queuename deleted.""")
-    return nothing
+    revokeall!(guid, ManageQueue(Symbol(queuename)))
+    return "Queue $queuename deleted."
 end
 
 function help_message()

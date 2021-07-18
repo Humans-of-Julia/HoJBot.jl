@@ -6,7 +6,6 @@ export get_storage #extend in new storage backends
 export identifier, plugin_by_identifier
 
 using Discord
-using StructTypes
 
 abstract type AbstractPlugin end
 
@@ -14,11 +13,6 @@ abstract type AbstractPermission end
 
 const INSTANCES = Dict{String, AbstractPlugin}()
 const LOADED = AbstractPlugin[]
-
-StructTypes.StructType(::Type{<:AbstractPlugin}) = StructTypes.CustomStruct()
-StructTypes.lowertype(::Type{<:AbstractPlugin}) = String
-StructTypes.lower(x::AbstractPlugin) = identifier(x)
-StructTypes.construct(::Type{AbstractPlugin}, x::String) = plugin_by_identifier(x)
 
 function register!(p::AbstractPlugin)
     INSTANCES[identifier(p)] = p
