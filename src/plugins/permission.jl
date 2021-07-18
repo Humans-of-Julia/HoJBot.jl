@@ -57,7 +57,7 @@ end
 function check_admin(client::Client, m::Message)
     guild = Discord.get_guild(client, m.guild_id)
     channel = Discord.get_channel(client, m.channel_id)
-    perms = Discord.permissions_in(m.member, guild, channel)
+    perms = Discord.permissions_in(m.member, Discord.fetchval(guild), Discord.fetchval(channel))
     return Discord.has_permission(perms, PERM_ADMINISTRATOR)
 end
 
