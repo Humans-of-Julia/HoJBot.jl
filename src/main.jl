@@ -15,7 +15,7 @@ function start_bot(;
         presence=(game=(name="HoJ", type=AT_GAME),),
         prefix=COMMAND_PREFIX,
     )
-    PluginBase.initialize_plugins!(client)
+    PluginBase.initialize!(client)
     # add_help!(client; help = help_message())
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
