@@ -42,6 +42,7 @@ function initialize!(client::Client)
         success = initialize!(client, current)
         if success
             push!(LOADED, current)
+            @info "$(identifier(current)) loaded"
         else
             push!(waiting, current)
         end
@@ -66,7 +67,9 @@ function shutdown!()
         current = popfirst!(LOADED)
         success = shutdown!(current)
         if success
-            delete!(INSTANCES, identifier(current))
+            id = identifier(current)
+            delete!(INSTANCES, id)
+            @info "$id unloaded"
         else
             push!(LOADED, current)
         end

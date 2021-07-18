@@ -20,7 +20,7 @@ function start_bot(;
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
-    PluginBase.shutdown() || @warn "shutting down didn't work properly"
+    PluginBase.shutdown!() || @warn "shutting down didn't work properly"
 end
 
 """

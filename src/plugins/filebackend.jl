@@ -45,14 +45,13 @@ end
 
 function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, backend::FileBackend)
     guildstore = get(STORAGE, guid, nothing)
-    pn = identifier(p)
     if guildstore === nothing
         STORAGE[guid] = guildstore = GuildStorage(guid)
     end
-    pluginstorage = get(guildstore.plugins, pn, nothing)
+    pluginstorage = get(guildstore.plugins, p, nothing)
     if pluginstorage === nothing
         pluginstorage = create_storage(p, backend)
-        set!(guildstore.plugins, pn, pluginstorage)
+        set!(guildstore.plugins, p, pluginstorage)
     end
     return pluginstorage
 end
