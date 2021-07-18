@@ -36,7 +36,7 @@ function handle(c::Client, m::Message)
     elseif subcommand == "leave!"
         reply(c, m, sub_leave!(m.guild_id, m.author.id, args[3]))
     elseif subcommand == "list"
-        # reply(c, m, sub_list(m.guild_id, queuename))
+        sub_list(c, m, args[3])
     elseif subcommand == "position"
         # reply(c, m, sub_position(m.guild_id, m.channel_id, queuename))
     elseif subcommand == "pop!"
@@ -99,7 +99,7 @@ function sub_leave!(guid::Snowflake, user::Snowflake, queuename::String)
     end
 end
 
-function sub_list(c::Client, m::Message, queuename)
+function sub_list(c::Client, m::Message, queuename::String)
     pluginstorage = get_storage(m, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
