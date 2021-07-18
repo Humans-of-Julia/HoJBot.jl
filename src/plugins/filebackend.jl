@@ -95,6 +95,7 @@ function PluginBase.shutdown!(::FileBackend)
             persist!(guid, p)
         end
     end
+    return true
 end
 
 end
