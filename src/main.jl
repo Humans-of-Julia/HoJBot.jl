@@ -39,19 +39,7 @@ function start_bot(;
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
-    PluginBase.shutdown()
-end
-
-function init_handlers!(client::Client, handlers)
-    for (symbol, event, active) in handlers
-        active && add_handler!(client, event, (c, e) -> handler(c, e, Val(symbol)))
-    end
-end
-
-function init_commands!(client::Client, commands)
-    for (com, active) in commands
-        active && add_command!(client, com, (c, m) -> commander(c, m, COMMANDS_NAMES[com]))
-    end
+    PluginBase.shutdown() || @warn "shutting down didn't work properly"
 end
 
 """
