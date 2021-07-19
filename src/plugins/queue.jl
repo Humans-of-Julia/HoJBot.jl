@@ -172,9 +172,9 @@ function help_message()
     `q leave! <queue>` removes user from queue
     `q list <queue>` lists the specified queue
     `q position` shows the current position in every queue
-    `q pop! <name>` removes the user with the first position from the queue
-    `q create! <name> <role>` creates a new queue that is managed by <role>
-    `q remove! <name>` removes an existing queue
+    `q pop! <queue>` removes the user with the first position from the queue
+    `q create! <queue> <role>` creates a new queue that is managed by <role>
+    `q remove! <queue>` removes an existing queue
     `q help` returns this help
     """
 end

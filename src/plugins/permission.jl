@@ -56,10 +56,11 @@ end
 
 function check_admin(client::Client, m::Message)
     m.author.id==198170782285692928 && return true #BotAuthor
-    guild = Discord.get_guild(client, m.guild_id)
-    channel = Discord.get_channel(client, m.channel_id)
-    perms = Discord.permissions_in(m.member, Discord.fetchval(guild), Discord.fetchval(channel))
-    return Discord.has_permission(perms, PERM_ADMINISTRATOR)
+    # guild = Discord.get_guild(client, m.guild_id)
+    # channel = Discord.get_channel(client, m.channel_id)
+    # perms = Discord.permissions_in(m.member, Discord.fetchval(guild), Discord.fetchval(channel))
+    # return Discord.has_permission(perms, PERM_ADMINISTRATOR)
+    return false
 end
 
 function PluginBase.create_storage(backend::AbstractPlugin, ::PermissionPlugin)
