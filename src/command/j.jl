@@ -2,15 +2,26 @@
 
 function parse_doc(doc::AbstractString)
     doc = replace(doc, r"\n\n\n+" => "\n\n")
-    capture_ranges = [m.offset:m.offset+ncodeunits(m.match)-1 for m in eachmatch.(r"(```.+?```)"s, doc)]
+    capture_ranges = [m.offset:m.offset+ncodeunits(m.match)-1
+        for m in eachmatch.(r"(```.+?```)"s, doc)
+    ]
     for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n",doc)
         if all(rg -> m.offset ∉ rg, capture_ranges)
             if m.captures[2] == "# "
-                doc = replace(doc, m.match => m.captures[1]*"**"*m.captures[3]*"**\n"*"≡"^(length(m.captures[3])), count = 1)
+                doc = replace(doc, m.match => m.captures[1] *
+                    "**" * m.captures[3] * "**\n" * "≡"^(length(m.captures[3])),
+                    count = 1
+                )
             elseif m.captures[2] == "!!! "
-                doc = replace(doc, m.match => m.captures[1]*"__"*m.captures[3]*"__\n", count = 1)
+                doc = replace(doc, m.match => m.captures[1] *
+                    "__" * m.captures[3] * "__\n",
+                    count = 1
+                )
             else
-                doc = replace(doc, m.match => m.captures[1]*"*"*m.captures[3]*"*\n"*"-"^(length(m.captures[3])), count = 1)
+                doc = replace(doc, m.match => m.captures[1] *
+                    "*" * m.captures[3] * "*\n" * "-"^(length(m.captures[3])),
+                    count = 1
+                )
             end
         end
     end
@@ -25,8 +36,11 @@ end
 function commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "julia_commander called"
     # @info "Message content" m.content m.author.username m.author.discriminator
-    startswith(m.content, COMMAND_PREFIX * "j ") || startswith(m.content, COMMAND_PREFIX * "j? ") || m.content == COMMAND_PREFIX * "j" || return
-    regex = Regex(COMMAND_PREFIX * raw"j(\?| help| doc| packages| package| stats| top| bottom)? *(.*)$")
+    startswith(m.content, COMMAND_PREFIX * "j ") ||
+        startswith(m.content, COMMAND_PREFIX * "j? ") ||
+        m.content == COMMAND_PREFIX * "j" || return
+    regex = Regex(COMMAND_PREFIX * 
+        raw"j(\?| help| doc| packages| package| stats| top| bottom)? *(.*)$")
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_commander(c, m, Val(:julia_doc))
@@ -79,9 +93,14 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
         name = strip(name)
         name = replace(name, r"\s{2,}" => " ")
         channel = @discord get_channel(c, m.channel_id)
-        all_names = load_names(joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json"))
-        pkg_in_name, name = occursin('.', name) ? split(name, '.') |> u -> (first(u), last(u)) : ("", name)
-        all_docs = load_docs(joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json"))
+        all_names = load_names(joinpath(
+            @__DIR__, "..", "..", "data", "docs", "all_names.json")
+        )
+        pkg_in_name, name = occursin('.', name) ? split(name, '.') |>
+            u -> (first(u), last(u)) : ("", name)
+        all_docs = load_docs(joinpath(
+            @__DIR__, "..", "..", "data", "docs", "all_docs.json")
+        )
         if name in keys(all_names)
             doc_in_pkgs = Dict{String, String}()
             for pkg in keys(all_names[name])
@@ -98,7 +117,9 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
                         doc = "*In Package* `$k`:\n" * v
                     end
                     doc = parse_doc(doc)
-                    docs = split_message(doc, extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n", r"[^\s]+"])
+                    docs = split_message(doc,
+                        extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n", r"[^\s]+"]
+                    )
                     for doc_chunk in docs
                         # @info doc_chunk
                         reply(c, m, doc_chunk)
@@ -122,7 +143,8 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
     return nothing
 end
 
-function handle_doc_stats(c::Client, m::Message, captured1::AbstractString, captured2::AbstractString)
+function handle_doc_stats(c::Client, m::Message, captured1::AbstractString,
+        captured2::AbstractString)
     # @info "handle_doc_stats called"
     captured2 = strip(captured2)
     captured2 = replace(captured2, r"\s{2,}" => " ")
@@ -135,7 +157,9 @@ function handle_doc_stats(c::Client, m::Message, captured1::AbstractString, capt
             end
         elseif captured1 in (" top", " bottom")
             if captured2 != "" && all(isdigit,captured2)
-                statsmgs = stats_namescount("namescount", place=strip(captured1), number=max(1, parse(Int,captured2)))
+                statsmgs = stats_namescount("namescount", place=strip(captured1),
+                    number=max(1, parse(Int,captured2))
+                )
             else
                 statsmgs = stats_namescount("namescount", place=strip(captured1))
             end
@@ -152,7 +176,8 @@ function handle_julia_package_list(c::Client, m::Message)
     all_docs_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
     if isfile(all_docs_filename)
         all_docs = load_docs(all_docs_filename)
-        msg = "Besides the **keywords** and **Base**, there are $(length(all_docs)-2) packages " *
+        msg = "Besides the **keywords** and **Base**, " *
+            "there are $(length(all_docs)-2) packages " *
             "available with recorded names:\n\n" *
             join(sort(collect(keys(all_docs))), ", ") * "."
     else
@@ -170,8 +195,12 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
     if isfile(all_names_filename) && isfile(all_docs_filename)
         all_names = load_names(all_names_filename)
         pkg_list = [name for (name, d) in all_names if pkg in keys(d)]
-        pkg_list_exported = [name for name in pkg_list if all_names[name][pkg] == "exported"]
-        pkg_list_nonexported = [name for name in pkg_list if all_names[name][pkg] == "nonexported"]
+        pkg_list_exported = [
+            name for name in pkg_list if all_names[name][pkg] == "exported"
+        ]
+        pkg_list_nonexported = [
+            name for name in pkg_list if all_names[name][pkg] == "nonexported"
+        ]
         # @info pkg_list
         if length(pkg_list) > 0
             msg = ""
@@ -180,7 +209,8 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
             elseif length(pkg_list_exported) == 1
                 msg *= "**There is 1 exported name on record from package `$pkg`:**\n\n"
             else
-                msg *= "**There are $(length(pkg_list_exported)) exported names on record from package `$pkg`:**\n\n"
+                msg *= "**There are $(length(pkg_list_exported)) exported names " *
+                    "on record from package `$pkg`:**\n\n"
             end
             if length(pkg_list_exported) > 0
                 msg *= join(sort(pkg_list_exported), ", ") * ".\n\n"
@@ -190,7 +220,8 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
             elseif length(pkg_list_nonexported) == 1
                 msg *= "**There is 1 nonexported name:**\n\n"
             else
-                msg *= "**There are $(length(pkg_list_nonexported)) non-exported names:**\n\n"
+                msg *= "**There are $(length(pkg_list_nonexported)) " *
+                    "non-exported names:**\n\n"
             end
             if length(pkg_list_nonexported) > 1
                 msg *= join(sort(pkg_list_nonexported), ", ") * "."
