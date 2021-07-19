@@ -2,7 +2,8 @@
 # JuliaCon.debugmode(true)
 
 function commander(c::Client, m::Message, ::Val{:julia_con})
-    startswith(m.content, COMMAND_PREFIX * "jc ") || m.content == COMMAND_PREFIX * "jc" || return
+    startswith(m.content, COMMAND_PREFIX * "jc ") ||
+        m.content == COMMAND_PREFIX * "jc" || return
 
     regex = Regex(COMMAND_PREFIX * raw"jc( help| juliacon2021| now| today)? *(.*)$")
 
