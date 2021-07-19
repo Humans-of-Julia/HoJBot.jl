@@ -72,11 +72,13 @@ function auto_shutdown(c::Client, run_duration::TimePeriod, trigger_path::Abstra
         if now() > start_time + run_duration
             @info "Times up! The bot is shutting down automatically."
             shutdown_gracefully(c)
+            break
         end
         if length(trigger_path) > 0 && isfile(trigger_path)
             @info "The bot is shutting down via trigger path `$trigger_path`."
             rm(trigger_path)
             shutdown_gracefully(c)
+            break
         end
         sleep(5)
     end
@@ -88,8 +90,6 @@ function shutdown_gracefully(c::Client)
     catch ex
         @warn "Unable to close client connection" ex
     end
-    sleep(1)
-    exit(0)
 end
 
 function commander(c::Client, m::Message, service::Symbol)
