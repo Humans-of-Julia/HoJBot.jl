@@ -15,7 +15,7 @@ const INSTANCES = Dict{String, AbstractPlugin}()
 const LOADED = AbstractPlugin[]
 
 function register!(p::AbstractPlugin)
-    INSTANCES[identifier(p)] = p
+    INSTANCES[lowercase(identifier(p))] = p
 end
 
 """
@@ -31,8 +31,7 @@ initialize!(client::Client)::Bool
 Is called to initiate initialization of all plugins and returns whether it was completed successfully
 """
 function initialize!(client::Client)
-    isempty(LOADED) || return
-    waiting = collect(values(INSTANCES))
+    waiting = collect(setdiff(values(INSTANCES),LOADED))
     while !isempty(waiting)
         current = popfirst!(waiting)
         # if isabstracttype(current)
@@ -67,8 +66,7 @@ function shutdown!()
         current = popfirst!(LOADED)
         success = shutdown!(current)
         if success
-            id = identifier(current)
-            delete!(INSTANCES, id)
+            id = lowercase(identifier(current))
             @info "$id unloaded"
         else
             push!(LOADED, current)
@@ -82,10 +80,10 @@ function identifier(p::AbstractPlugin)
     if !endswith(sym, "Plugin")
         @warn "$p doesn't use type name formatting, customize identifier function"
     end
-    return convert(String, sym[1:end-6])
+    return convert(String, lowercase(sym[1:end-6]))
 end
 
-plugin_by_identifier(s) = get(INSTANCES, string(s), nothing)
+plugin_by_identifier(s) = get(INSTANCES, lowercase(string(s)), nothing)
 
 """
     help(::AbstractPlugin, args...; singleline=false)
@@ -100,9 +98,7 @@ Returns an initialized plugin storage. Defaults to a Symbol->Any Dict
 
 Defined by: each plugin that needs storage in any backend
 """
-function create_storage(backend::AbstractPlugin, plugin::AbstractPlugin)
-    return Dict{Symbol, Any}()
-end
+function create_storage end
 
 "Request the plugin storage object"
 function get_storage end

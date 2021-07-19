@@ -7,6 +7,8 @@ using ..PluginBase
 
 struct QueuePlugin <: AbstractPlugin end
 
+PluginBase.identifier(::QueuePlugin) = "queue"
+
 const PLUGIN = QueuePlugin()
 
 struct ManageQueue <: AbstractPermission
@@ -26,10 +28,17 @@ function PluginBase.initialize!(client::Client, ::QueuePlugin)
     return true
 end
 
+function PluginBase.create_storage(backend::AbstractPlugin, ::QueuePlugin)
+    return Dict{Symbol,Vector{Snowflake}}()
+end
+
 function handle(c::Client, m::Message)
     isenabled(m.guild_id, m.channel_id, PLUGIN) || return
     args = split(m.content)
-    length(args) < 2 && reply(c, m, "you need a subcommand")
+    if length(args) < 2
+        reply(c, m, "you need a subcommand")
+        return
+    end
     subcommand = args[2]
     if subcommand == "join!"
         reply(c, m, sub_join!(m.guild_id, m.author.id, args[3]))
@@ -48,8 +57,12 @@ function handle(c::Client, m::Message)
     elseif subcommand == "create!"
         if !is_permitted(c, m, CreateQueue())
             reply(c, m, "you are not allowed to create queues")
+        elseif length(args)<4
+            reply(c, m, "missing arguments")
+        elseif (queuename=args[3]; role=args[4]; role[1]!='<' || role[2]!='@' || role[3]!='&' || role[end]!='>')
+        reply(c, m, "invalid role")
         else
-            reply(c, m, sub_create!(m.guild_id, args[3], parse(Snowflake, args[4])))
+            reply(c, m, sub_create!(m.guild_id, args[3], parse(Snowflake, role[4:end-1])))
         end
     elseif subcommand == "remove!"
         if !is_permitted(c, m, CreateQueue())
@@ -58,7 +71,7 @@ function handle(c::Client, m::Message)
             reply(c, m, sub_remove!(m.guild_id, args[3]))
         end
     else
-        reply(c, m, help_message)
+        reply(c, m, help_message())
     end
 end
 
@@ -73,7 +86,7 @@ end
 
 
 
-function sub_join!(guid::Snowflake, user::Snowflake, queuename::String)
+function sub_join!(guid::Snowflake, user::Snowflake, queuename::AbstractString)
     pluginstorage = get_storage(guid, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
@@ -86,7 +99,7 @@ function sub_join!(guid::Snowflake, user::Snowflake, queuename::String)
     end
 end
 
-function sub_leave!(guid::Snowflake, user::Snowflake, queuename::String)
+function sub_leave!(guid::Snowflake, user::Snowflake, queuename::AbstractString)
     pluginstorage = get_storage(guid, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
@@ -99,7 +112,7 @@ function sub_leave!(guid::Snowflake, user::Snowflake, queuename::String)
     end
 end
 
-function sub_list(c::Client, m::Message, queuename::String)
+function sub_list(c::Client, m::Message, queuename::AbstractString)
     pluginstorage = get_storage(m, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
@@ -119,7 +132,7 @@ function sub_position(guid::Snowflake, user::Snowflake)
     return join(("$q: position $(only(indexin(user, pluginstorage[q])))" for q in queues), "\r\n")
 end
 
-function sub_pop!(guid::Snowflake, queuename::String)
+function sub_pop!(guid::Snowflake, queuename::AbstractString)
     pluginstorage = get_storage(guid, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
@@ -130,7 +143,7 @@ function sub_pop!(guid::Snowflake, queuename::String)
     end
 end
 
-function sub_create!(guid::Snowflake, queuename::String, role::Snowflake)
+function sub_create!(guid::Snowflake, queuename::AbstractString, role::Snowflake)
     pluginstorage = get_storage(guid, PLUGIN)
     qsymbol = qsym(queuename)
     queue = get(pluginstorage, qsymbol, nothing)
@@ -143,7 +156,7 @@ function sub_create!(guid::Snowflake, queuename::String, role::Snowflake)
     end
 end
 
-function sub_remove!(guid::Snowflake, queuename::String)
+function sub_remove!(guid::Snowflake, queuename::AbstractString)
     pluginstorage = get_storage(guid, PLUGIN)
     delete!(pluginstorage, qsym(queuename))
     revokeall!(guid, ManageQueue(Symbol(queuename)))

@@ -43,14 +43,14 @@ function PluginBase.initialize!(client::Client, p::AbstractStoragePlugin)
     return true
 end
 
-function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, backend::FileBackend)
+function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, ::FileBackend)
     guildstore = get(STORAGE, guid, nothing)
     if guildstore === nothing
         STORAGE[guid] = guildstore = GuildStorage(guid)
     end
     pluginstorage = get(guildstore.plugins, p, nothing)
     if pluginstorage === nothing
-        pluginstorage = create_storage(p, backend)
+        pluginstorage = create_storage(PLUGIN, p)
         set!(guildstore.plugins, p, pluginstorage)
     end
     return pluginstorage
@@ -71,7 +71,7 @@ function load!(guid::Snowflake, p::AbstractPlugin)
     if pluginstorage !== nothing
         @warn "overwriting $p storage for guild $guid"
     else
-        pluginstorage = create_storage(p, PLUGIN)
+        pluginstorage = create_storage(PLUGIN, p)
         set!(guildstore.plugins, p, pluginstorage)
     end
     open(target) do io
@@ -84,7 +84,7 @@ function persist!(guid::Snowflake, p::AbstractPlugin)
     guildstore !== nothing || return
     pluginstore = get(guildstore.plugins, p, nothing)
     pluginstore !== nothing || return
-    open(ensurepath!(construct_path(guid, p))) do io
+    open(ensurepath!(construct_path(guid, p)), write=true) do io
         JSON3.write(io, pluginstore)
     end
 end

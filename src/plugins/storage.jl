@@ -24,7 +24,7 @@ function PluginBase.get_storage(guild_id::Snowflake, p::AbstractPlugin, storage)
     @warn "Storage plugin $storage for $p not found, defaulting..."
     default = get(_default_backend, p, _FALLBACK_END[])
     if storage == default
-        @error "default backend is not availabled"
+        @error "default backend is not available"
     end
     return get_storage(guild_id, p, default)
 end
