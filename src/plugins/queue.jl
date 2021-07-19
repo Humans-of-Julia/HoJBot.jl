@@ -60,7 +60,7 @@ function handle(c::Client, m::Message)
         elseif length(args)<4
             reply(c, m, "missing arguments")
         elseif (queuename=args[3]; role=args[4]; role[1]!='<' || role[2]!='@' || role[3]!='&' || role[end]!='>')
-        reply(c, m, "invalid role")
+            reply(c, m, "invalid role")
         else
             reply(c, m, sub_create!(m.guild_id, args[3], parse(Snowflake, role[4:end-1])))
         end
