@@ -24,7 +24,7 @@ end
 qsym(name::AbstractString) = Symbol(lowercase(name))
 
 function PluginBase.initialize!(client::Client, ::QueuePlugin)
-    add_command!(client, :q, (c, m) -> handle(c, m))
+    add_command!(client, :q, handle)
     return true
 end
 
