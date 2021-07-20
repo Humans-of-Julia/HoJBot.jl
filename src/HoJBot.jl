@@ -2,6 +2,7 @@ module HoJBot
 
 export start_bot
 
+using CairoPlot
 using Crayons
 using CSV
 using DataFrames
@@ -13,7 +14,6 @@ using Formatting
 using JuliaCon
 using JSON
 using OrderedCollections
-using Plots
 using Pretend
 using PrettyTables
 using TimeZones
