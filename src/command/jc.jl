@@ -5,14 +5,14 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
     startswith(m.content, COMMAND_PREFIX * "jc ") ||
         m.content == COMMAND_PREFIX * "jc" || return
 
-    regex = Regex(COMMAND_PREFIX * raw"jc( help| juliacon2021| now| today)? *(.*)$")
+    regex = Regex(COMMAND_PREFIX * raw"jc( help| 2021| now| today)? *(.*)$")
 
     matches = match(regex, m.content)
 
     if matches === nothing || matches.captures[1] ∈ (" help", nothing)
         help_commander(c, m, :julia_con)
-    elseif matches.captures[1] == " juliacon2021"
-        @info "juliacon2021 was required" m.content m.author.username m.author.discriminator
+    elseif matches.captures[1] == " 2021"
+        @info "2021 was required" m.content m.author.username m.author.discriminator
         jc_juliacon2021(c, m)
     elseif matches.captures[1] == " now"
         @info "now was required" m.content m.author.username m.author.discriminator
@@ -31,12 +31,12 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         How to look for information about JuliaCon 2021 with the `jc` command:
         ```
         jc help
-        jc juliacon2021
+        jc 2021
         jc now
         jc today
         ```
         `help` prints this message
-        `juliacon2021` greets the users and provide a link to the official website
+        `2021` greets the users and provide a link to the official website of year 2021's edition
         `now` details the talks and events occuring right now on the different tracks
         `today` lists the talks and event of the day
         """)
