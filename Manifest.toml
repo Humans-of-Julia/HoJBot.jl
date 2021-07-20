@@ -250,10 +250,10 @@ uuid = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 version = "1.9.0"
 
 [[deps.JuliaCon]]
-deps = ["Dates", "Distributed", "Downloads", "JSON", "Logging", "Pkg", "Preferences", "PrettyTables", "TimerOutputs"]
-git-tree-sha1 = "da9d2b6a30761d33098b58dd74726b8640dd065c"
+deps = ["Dates", "Distributed", "Downloads", "JSON", "Logging", "Pkg", "Preferences", "PrettyTables", "TimeZones", "TimerOutputs"]
+git-tree-sha1 = "f7468a4444deae82c39af7c6b282181a1e225d44"
 uuid = "bfca5e61-7ca9-4d61-a82b-6df663fb0d3c"
-version = "0.3.1"
+version = "0.4.0"
 
 [[deps.LRUCache]]
 git-tree-sha1 = "d64a0aff6691612ab9fb0117b0995270871c5dfc"

@@ -48,10 +48,10 @@ function jc_juliacon2021(c::Client, m::Message)
 end
 
 function jc_now(c::Client, m::Message)
-    if JuliaCon.get_running_talks(; now=FAKENOW) === nothing
+    if JuliaCon.get_running_talks() === nothing
         @info "There is no JuliaCon program today!"
     else
-        reply(c, m, JuliaCon.now(now=FAKENOW, output=:text))
+        reply(c, m, JuliaCon.now(output=:text))
     end
     return nothing
 end
@@ -73,11 +73,11 @@ function split_pretty_table(str)
 end
 
 function jc_today(c::Client, m::Message)
-    if JuliaCon.get_today(; now=FAKENOW) === nothing
+    if JuliaCon.get_today() === nothing
         @info "There is no JuliaCon program today!"
     else
         strings = Vector{String}()
-        aux = JuliaCon.today(now = FAKENOW, output = :text)
+        aux = JuliaCon.today(output = :text)
         tables, legend = aux[1:end-1], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
