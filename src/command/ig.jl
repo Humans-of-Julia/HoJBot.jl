@@ -183,10 +183,10 @@ end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:hist}, args)
     ig_affirm_player(user.id)
-    if length(args) >= 1 
+    if length(args) >= 1
         symbol = uppercase(args[1])
         clause = " of $symbol"
-    else 
+    else
         symbol = nothing
         clause = ""
     end
@@ -220,8 +220,8 @@ function ig_perf(user_id::UInt64)
     df = DataFrame(
         symbol = symbols,
         px_eod = prices_yesterday,
-        px_now = prices_today, 
-        chg = round.(prices_change; digits = 2), 
+        px_now = prices_today,
+        chg = round.(prices_change; digits = 2),
         pct_chg = round.(prices_change_pct; digits = 1),
     )
     rename!(df, "pct_chg" => "% chg")
@@ -252,7 +252,7 @@ function ig_hist(user_id::UInt64, symbol::Optional{AbstractString})
     if symbol !== nothing
         filter!(:symbol => ==(symbol), df)
     end
-    
+
     df.shares = round.(Int, df.shares)
     rename!(df, "purchase_price" => "px_buy")
     rename!(df, "purchase_date" => "date")
@@ -273,7 +273,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
     total_str = format_amount(round(Int, sum(df.amount)))
 
     discord_reply(
-        c, m, 
+        c, m,
         ig_hey(user.username,
             """
             here is your portfolio:
@@ -686,22 +686,15 @@ end
 
 "Plot a simple price chart"
 function ig_chart(symbol::AbstractString, dates::Vector{Date}, values::Vector{<:Real})
-    theme(:dark)
-    height = 720
-    width = height * 16 ÷ 9
     from_date, to_date = extrema(dates)
     last_price_str = format_amount(last(values))
-    p = plot(dates, values,
-        title = "$symbol Historical Prices ($from_date to $to_date)\nLast price: $last_price_str",
-        linewidth = 2,
-        size = (width, height),
-        legend = nothing,
-        tickfontsize = 12,
-    )
+    c = crplot(dates, values; xticks = 5, yticks = 10, title="$symbol Historical Prices ($from_date to $to_date)\nLast price: $last_price_str")
     filename = tempname() * ".png"
-    savefig(p, filename)
+    CairoPlot.write_to_png(c, filename)
     return filename
 end
+
+
 
 "Find lots for a specific stock in the portfolio. Sort by purchase date."
 function ig_find_lots(pf::IgPortfolio, symbol::AbstractString)

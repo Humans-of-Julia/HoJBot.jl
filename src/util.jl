@@ -57,8 +57,8 @@ end
 
 Return the documentation info contained in the given JSON file, which should
 be in the form of a Dict, where the keys are the list of recorded packages,
-and where each value is another Dict, which contains all the names in the 
-package as keys, with the values being a vector, where the first element 
+and where each value is another Dict, which contains all the names in the
+package as keys, with the values being a vector, where the first element
 indicates whether the name is "exported" or "nonexported" from the package,
 and the second element contains the corresponding docstring.
 """
@@ -91,7 +91,7 @@ function update_names_count(
         count_docs_dir = joinpath("data", "docs"),
         count_names_file = joinpath(count_docs_dir, "$source.json")
     )
-    
+
     isfile(count_names_file) || write(ensurepath!(count_names_file), "{}")
     namescount = JSON.parsefile(count_names_file)
 
@@ -110,7 +110,7 @@ function update_names_count(
         )
     else
         push!(
-            namescount, 
+            namescount,
                 name => Dict(
                     "count" => 1,
                     "info" => info

@@ -1,12 +1,12 @@
-# Package initiation hook
-function __init__()
-    # Unfortunately, the default GR backend does not work well with
-    # offline plotting (see this issue https://github.com/JuliaPlots/Plots.jl/issues/2127).
-    # So, we will use PyPlot backend instead.
-    @static if Sys.islinux()
-        pyplot()
-    end
-end
+# # Package initiation hook
+# function __init__()
+#     # Unfortunately, the default GR backend does not work well with
+#     # offline plotting (see this issue https://github.com/JuliaPlots/Plots.jl/issues/2127).
+#     # So, we will use PyPlot backend instead.
+#     @static if Sys.islinux()
+#         pyplot()
+#     end
+# end
 
 function help_message()
     act_commands = collect(keys(filter(c -> c.second, ACTIVE_COMMANDS)))
