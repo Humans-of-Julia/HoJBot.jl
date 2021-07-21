@@ -7,9 +7,10 @@ if [[ -z "$HOJBOT_DISCORD_TOKEN" ]]; then
 fi
 
 # Default environment settings
+: ${TZ=UTC}
 : ${RUN_ONCE=no}
 : ${RUN_DURATION_MINUTES=2880}
-: ${RESTART_THROTTLE_SECONDS=120}
+: ${RESTART_THROTTLE_SECONDS=10}
 
 while true; do
     echo "`date`: Starting HoJBot..."
