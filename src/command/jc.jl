@@ -9,7 +9,7 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
         return
     end
 
-    arg = (occursin(r"[0-9]*", args[1]) ? "jc" : "") * args[1]
+    arg = (occursin(r"[0-9]+", args[1]) ? "jc" : "") * args[1]
     jc_execute(c, m, Symbol(arg), args[2:end])
 
 end
@@ -24,10 +24,12 @@ end
 function jc_execute(c, m, ::Val{:now}, args)
     @info "now was required" m.content m.author.username m.author.discriminator args
 
-    current = ZonedDateTime(now(), TimeZone(TimeZones.istimezone(args[1]) ? args[1] : "UTC"))
+    tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
+    current = ZonedDateTime(now(tz"UTC"), TimeZone(tz_arg))
+    # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
 
-    if JuliaCon.get_running_talks(now = current) === nothing
-        not_now = "There is no JuliaCon program now"
+    if isempty(JuliaCon.get_running_talks(now = current))
+        not_now = "There is no JuliaCon program now."
         @info not_now
         today = " Try `jc today`"
         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
@@ -39,12 +41,15 @@ function jc_execute(c, m, ::Val{:now}, args)
 end
 
 function jc_execute(c, m, ::Val{:today}, args)
-    day = today(TimeZone(TimeZones.istimezone(args[1]) ? args[1] : "UTC"))
+    tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
+    day = today(TimeZone(tz_arg))
+    @info "Today" day
     return jc_execute(c, m, :day, [day])
 end
 
 function jc_execute(c, m, ::Val{:tomorrow}, args)
-    day = today(TimeZone(TimeZones.istimezone(args[1]) ? args[1] : "UTC")) + Day(1)
+    tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
+    day = today(TimeZone(tz_arg)) + Day(1)
     return jc_execute(c, m, :day, [day])
 end
 
@@ -52,7 +57,7 @@ function jc_execute(c, m, ::Val{:next}, args)
     @info "Calling :next"
 end
 
-jc_execute(c, m, ::Val{:day}, args) = jc_today(c, m, args[1])
+jc_execute(c, m, ::Val{:day}, args) = jc_today(c, m; day = Date(args[1]))
 
 function help_commander(c::Client, m::Message, ::Val{:julia_con})
     reply(c, m, """
@@ -105,7 +110,7 @@ function split_pretty_table(str)
     return strings
 end
 
-function jc_today(c::Client, m::Message; day = today())
+function jc_today(c::Client, m::Message; day = today(tz"UTC"))
     if JuliaCon.get_today(now = day) === nothing
         not_today = "There is no JuliaCon program today!"
         @info not_today
@@ -113,7 +118,7 @@ function jc_today(c::Client, m::Message; day = today())
         reply(c, m, not_today * "\n\n" * schedule)
     else
         strings = Vector{String}()
-        aux = JuliaCon.today(now = day, output = :text)
+        aux = JuliaCon.today(now = ZonedDateTime(day, tz"UTC"), output = :text)
         tables, legend = aux[1:end-1], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
