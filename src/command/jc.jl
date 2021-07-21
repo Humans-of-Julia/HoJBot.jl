@@ -65,7 +65,7 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         ```
         jc help
         jc 2021
-        jc now [timezone]
+        jc now
         jc today [timezone]
         jc tomorrow [timezone]
         jc day <xxxx-mm-dd>
