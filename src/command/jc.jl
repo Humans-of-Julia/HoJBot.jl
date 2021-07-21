@@ -49,8 +49,11 @@ end
 
 function jc_now(c::Client, m::Message)
     if JuliaCon.get_running_talks() === nothing
-        @info "There is no JuliaCon program now"
-        reply("There is no JuliaCon program now! Try `jc today`")
+        not_now = "There is no JuliaCon program now"
+        @info not_now
+        today = " Try `jc today`"
+        schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
+        reply(c, m, not_now * today * "\n\n" * schedule)
     else
         reply(c, m, JuliaCon.now(output=:text))
     end
@@ -75,8 +78,10 @@ end
 
 function jc_today(c::Client, m::Message)
     if JuliaCon.get_today() === nothing
-        @info "There is no JuliaCon program today!"
-        reply("There is no JuliaCon program today!")
+        not_today = "There is no JuliaCon program today!"
+        @info not_today
+        schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
+        reply(c, m, not_today * "\n\n" * schedule)
     else
         strings = Vector{String}()
         aux = JuliaCon.today(output = :text)
