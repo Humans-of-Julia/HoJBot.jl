@@ -25,7 +25,7 @@ function jc_execute(c, m, ::Val{:now}, args)
     @info "now was required" m.content m.author.username m.author.discriminator args
 
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
-    current = ZonedDateTime(now(tz"UTC"), TimeZone(tz_arg))
+    current = ZonedDateTime(now(), TimeZone(tz_arg))
     # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
 
     if isempty(JuliaCon.get_running_talks(now = current))
