@@ -4,7 +4,7 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
     @debug "parse result" command args
 
     if length(args) == 0 ||
-        args[1] ∉ ["2021", "now", "today", "next", "tomorrow", "day"]
+        args[1] ∉ ["2021", "now", "today", "tomorrow", "day"] # next is not available yet
         help_commander(c, m, :julia_con)
         return
     end
@@ -43,7 +43,7 @@ end
 function jc_execute(c, m, ::Val{:today}, args)
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
     day = today(TimeZone(tz_arg))
-    @info "Today" day
+    @info "Today" day args
     return jc_execute(c, m, :day, [day])
 end
 
@@ -67,12 +67,20 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         jc 2021
         jc now [timezone]
         jc today [timezone]
+        jc tomorrow [timezone]
         jc day <xxxx-mm-dd>
         ```
         `help` prints this message
         `2021` greets the users and provide a link to the official website of year 2021's edition
         `now` details the talks and events occuring right now on the different tracks
-        `today` lists the talks and event of the day
+        `today`, `tomorrow`, `day` lists the talks and event of the day. [timezone] is an optional argument which need to be valid following the TimeZones.jl package
+
+        Examples
+        ```
+        jc today Asia/Tokyo
+        jc tomorrow America/Juneau
+        jc day 2021-07-27
+        ```
         """)
 end
 
@@ -80,19 +88,6 @@ function jc_juliacon2021(c::Client, m::Message)
     reply(c, m, "Welcome to JuliaCon 2021! Find more information at https://juliacon.org/2021/.")
     return nothing
 end
-
-# function jc_now(c::Client, m::Message; tz = "UTC")
-#     if JuliaCon.get_running_talks() === nothing
-#         not_now = "There is no JuliaCon program now"
-#         @info not_now
-#         today = " Try `jc today`"
-#         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
-#         reply(c, m, not_now * today * "\n\n" * schedule)
-#     else
-#         reply(c, m, JuliaCon.now(output=:text))
-#     end
-#     return nothing
-# end
 
 function split_pretty_table(str)
     lines = split(str, "\n")
@@ -118,7 +113,8 @@ function jc_today(c::Client, m::Message; day = today(tz"UTC"))
         reply(c, m, not_today * "\n\n" * schedule)
     else
         strings = Vector{String}()
-        aux = JuliaCon.today(now = ZonedDateTime(day, tz"UTC"), output = :text)
+        @info day
+        aux = JuliaCon.today(now = day, output = :text)
         tables, legend = aux[1:end-1], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
