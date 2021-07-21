@@ -12,6 +12,8 @@ fi
 : ${RUN_DURATION_MINUTES=2880}
 : ${RESTART_THROTTLE_SECONDS=10}
 
+export TZ
+
 while true; do
     echo "`date`: Starting HoJBot..."
     julia --project=. -e "using Pkg; Pkg.instantiate(); using HoJBot, Dates; start_bot(; run_duration = Minute(${RUN_DURATION_MINUTES}));"
