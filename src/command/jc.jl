@@ -1,6 +1,3 @@
-# TODO: temporary until the start of JuliaCon
-# JuliaCon.debugmode(true)
-
 function commander(c::Client, m::Message, ::Val{:julia_con})
     command = extract_command("jc", m.content)
     args = split(command)
@@ -8,7 +5,7 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
 
     if length(args) == 0 ||
         args[1] ∉ ["2021", "now", "today", "next", "tomorrow", "day"]
-        help_commander(c, m, :jc)
+        help_commander(c, m, :julia_con)
         return
     end
 
@@ -63,8 +60,9 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         ```
         jc help
         jc 2021
-        jc now
-        jc today
+        jc now [timezone]
+        jc today [timezone]
+        jc day <xxxx-mm-dd>
         ```
         `help` prints this message
         `2021` greets the users and provide a link to the official website of year 2021's edition
