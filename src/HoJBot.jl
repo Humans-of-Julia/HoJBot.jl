@@ -20,9 +20,15 @@ using TimeZones
 using UUIDs
 using Pkg
 
+using Discord: Snowflake
+
 import HTTP
 import JSON3
 import StructTypes
+
+include("pluginbase.jl")
+
+import .PluginBase: handle_command as handler, handle_observer as commander
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 
@@ -31,6 +37,7 @@ include("dispatcher.jl")
 include("util.jl")
 include("discord.jl")
 include("main.jl")
+include("rights.jl")
 
 include("command/tz.jl")
 include("command/j.jl")
