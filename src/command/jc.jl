@@ -112,12 +112,8 @@ function split_pretty_table(str)
 end
 
 function jc_today(c::Client, m::Message, zonedDT::ZonedDateTime)
-    response = jc_today(zonedDT)
-    if response isa AbstractString
-        reply(c, m, response)
-    else
-        foreach(s -> reply(c, m, s), response)
-    end
+    responses = jc_today(zonedDT)
+    foreach(s -> reply(c, m, s), responses)
 end
 
 function jc_today(zonedDT::ZonedDateTime)
@@ -126,7 +122,7 @@ function jc_today(zonedDT::ZonedDateTime)
         not_today = "There is no JuliaCon program today!"
         @info not_today
         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
-        return not_today * "\n\n" * schedule
+        return [not_today * "\n\n" * schedule]
     else
         strings = Vector{String}()
         aux = JuliaCon.today(now = zonedDT, output = :text)
