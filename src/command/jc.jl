@@ -27,8 +27,9 @@ function jc_execute(c, m, ::Val{:now}, args)
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
     current = ZonedDateTime(now(), TimeZone(tz_arg))
     # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
+    @info "now command" tz_arg current
 
-    if isempty(JuliaCon.get_running_talks(now = current))
+    if JuliaCon.get_running_talks(now = current) === nothing
         not_now = "There is no JuliaCon program now."
         @info not_now
         today = " Try `jc today`"
@@ -42,22 +43,27 @@ end
 
 function jc_execute(c, m, ::Val{:today}, args)
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
-    day = today(TimeZone(tz_arg))
-    @info "Today" day args
-    return jc_execute(c, m, :day, [day])
+    dt = now(TimeZone(tz_arg))
+    jc_today(c, m, dt)
+    return nothing
 end
 
 function jc_execute(c, m, ::Val{:tomorrow}, args)
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
-    day = today(TimeZone(tz_arg)) + Day(1)
-    return jc_execute(c, m, :day, [day])
+    dt = now(TimeZone(tz_arg)) + Day(1)
+    jc_today(c, m, dt)
+    return nothing
 end
 
 function jc_execute(c, m, ::Val{:next}, args)
     @info "Calling :next"
 end
 
-jc_execute(c, m, ::Val{:day}, args) = jc_today(c, m; day = Date(args[1]))
+function jc_execute(c, m, ::Val{:day}, args)
+    zonedDT = ZonedDateTime(Date(args[1]), tz"UTC")
+    jc_today(c, m, zonedDT)
+    return nothing
+end
 
 function help_commander(c::Client, m::Message, ::Val{:julia_con})
     reply(c, m, """
@@ -105,22 +111,30 @@ function split_pretty_table(str)
     return strings
 end
 
-function jc_today(c::Client, m::Message; day = today(tz"UTC"))
-    if JuliaCon.get_today(now = day) === nothing
+function jc_today(c::Client, m::Message, zonedDT::ZonedDateTime)
+    response = jc_today(zonedDT)
+    if response isa AbstractString
+        reply(c, m, response)
+    else
+        foreach(s -> reply(c, m, s), response)
+    end
+end
+
+function jc_today(zonedDT::ZonedDateTime)
+    @info "jc_today" zonedDT
+    if JuliaCon.get_today(now = zonedDT) === nothing
         not_today = "There is no JuliaCon program today!"
         @info not_today
         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
-        reply(c, m, not_today * "\n\n" * schedule)
+        return not_today * "\n\n" * schedule
     else
         strings = Vector{String}()
-        @info day
-        aux = JuliaCon.today(now = day, output = :text)
+        aux = JuliaCon.today(now = zonedDT, output = :text)
         tables, legend = aux[1:end-1], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
         end
         push!(strings, legend)
-        foreach(s -> reply(c, m, s), strings)
+        return strings
     end
-    return nothing
 end
