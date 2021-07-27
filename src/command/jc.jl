@@ -29,12 +29,12 @@ function jc_execute(c, m, ::Val{:now}, args)
     # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
     @info "now command" tz_arg current
 
-    if JuliaCon.get_running_talks(now = current) === nothing
+    if isempty(JuliaCon.get_running_talks(now = current))
         not_now = "There is no JuliaCon program now."
         @info not_now
         today = " Try `jc today`"
         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
-        reply(c, m, not_now * today * "\n\n" * schedule)
+        reply(c, m, not_now * today * "\n" * schedule)
     else
         reply(c, m, JuliaCon.now(now = current, output=:text))
     end
@@ -120,10 +120,9 @@ function jc_today(zonedDT::ZonedDateTime)
     @info "jc_today" zonedDT
     aux = JuliaCon.today(now = zonedDT, output = :text)
     if aux === nothing
-        not_today = "There is no JuliaCon program today!"
-        @info not_today
+        not_today = "There is no JuliaCon program at $(zonedDT)"
         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
-        return [not_today * "\n\n" * schedule]
+        return [not_today * "\n" * schedule]
     else
         strings = Vector{String}()
         tables, legend = aux[1:end-1], aux[end]
