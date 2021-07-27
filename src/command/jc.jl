@@ -33,7 +33,7 @@ function jc_execute(c, m, ::Val{:now}, args)
         not_now = "There is no JuliaCon program now."
         @info not_now
         today = " Try `jc today`"
-        schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
+        schedule = "(Full schedule: https://live.juliacon.org/agenda)"
         reply(c, m, not_now * today * "\n" * schedule)
     else
         reply(c, m, JuliaCon.now(now = current, output=:text))
@@ -121,7 +121,7 @@ function jc_today(zonedDT::ZonedDateTime)
     aux = JuliaCon.today(now = zonedDT, output = :text)
     if aux === nothing
         not_today = "There is no JuliaCon program at $(zonedDT)"
-        schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
+        schedule = "(Full schedule: https://live.juliacon.org/agenda)"
         return [not_today * "\n" * schedule]
     else
         strings = Vector{String}()
