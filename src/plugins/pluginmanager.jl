@@ -8,15 +8,15 @@ struct PluginManagerPlugin <: AbstractPlugin end
 
 const PLUGIN = PluginManagerPlugin()
 
-struct PluginManagerPermission <: AbstractPermission end
+struct ManagementPermission <: AbstractPermission end
 
-const PERM = PluginManagerPermission()
+const PERM = ManagementPermission()
 
 PluginBase.isenabled(guid::Snowflake, ::PluginManagerPlugin) = true
 PluginBase.identifier(::PluginManagerPlugin) = "plugin"
 
 function __init__()
-    register!(PLUGIN)
+    register!(PLUGIN, permissions=(ManagementPermission,))
 end
 
 function PluginBase.initialize!(client::Client, ::PluginManagerPlugin)
@@ -25,20 +25,16 @@ function PluginBase.initialize!(client::Client, ::PluginManagerPlugin)
 end
 
 function handle(c::Client, m::Message)
-    @info m
-    @info "pre-enabled-check"
     isenabled(m.guild_id, m.channel_id, PLUGIN) || return
-    @info "pre-permission-check"
     is_permitted(c, m, PERM) || return
     args = split(m.content)
     if length(args) < 3
-        @info "too-few-args"
         reply(c, m, "Unknown command")
         return
     end
     subcommand = args[2]
-    plug = plugin_by_identifier(args[3])
-    if plug===nothing
+    plug = lookup(args[3])
+    if plug===nothing || !(plug isa AbstractPlugin)
         reply(c, m, "$(args[3]) is an invalid plugin identifier")
     elseif subcommand == "enable!"
         reply(c, m, enable!(m.guild_id, plug))

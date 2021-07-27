@@ -67,4 +67,9 @@ function PluginBase.create_storage(backend::AbstractPlugin, ::PermissionPlugin)
     return Dict{AbstractPermission, Set{Snowflake}}()
 end
 
+StructTypes.StructType(::Type{AbstractPermission}) = StructTypes.AbstractType()
+StructTypes.StructType(::Type{T}) where {T<:AbstractPermission} = StructTypes.UnorderedStruct()
+StructTypes.subtypekey(::Type{AbstractPermission}) = :permission
+StructTypes.subtypes(::Type{AbstractPermission}) = PluginBase.permissionmap()
+
 end

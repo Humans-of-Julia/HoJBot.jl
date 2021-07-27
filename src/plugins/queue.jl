@@ -11,14 +11,13 @@ PluginBase.identifier(::QueuePlugin) = "queue"
 
 const PLUGIN = QueuePlugin()
 
+struct CreateQueue <: AbstractPermission end
 struct ManageQueue <: AbstractPermission
     queue::Symbol
 end
 
-struct CreateQueue <: AbstractPermission end
-
 function __init__()
-    register!(PLUGIN)
+    register!(PLUGIN, permissions=(CreateQueue, ManageQueue))
 end
 
 qsym(name::AbstractString) = Symbol(lowercase(name))
@@ -118,8 +117,8 @@ function sub_list(c::Client, m::Message, queuename::AbstractString)
     if queue===nothing
         reply(c, m, """Queue $queuename does not exist.""")
     else
-        msg = reply(c, m, "placeholder for non-ping")
         newtext = join(("$pos: <@$name>" for (pos, name) in enumerate(queue)), "\r\n")
+        msg = reply(c, m, "placeholder for non-ping")
         fetched = fetchval(msg)
         edit_message(c, fetched.channel_id, fetched.id, content=newtext)
     end

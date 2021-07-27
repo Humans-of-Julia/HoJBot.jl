@@ -35,48 +35,29 @@ function __init__()
 end
 
 function PluginBase.initialize!(client::Client, p::AbstractStoragePlugin)
-    for (guid, storage) in pairs(STORAGE)
-        for p in keys(storage.plugins)
-            persist!(guid, p)
-        end
-    end
+    # loading on demand
     return true
 end
 
-function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, ::FileBackend)
+function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, ::FileBackend;force_load=false)
     guildstore = get(STORAGE, guid, nothing)
     if guildstore === nothing
         STORAGE[guid] = guildstore = GuildStorage(guid)
     end
     pluginstorage = get(guildstore.plugins, p, nothing)
-    if pluginstorage === nothing
+    if pluginstorage === nothing || force_load
         pluginstorage = create_storage(PLUGIN, p)
         set!(guildstore.plugins, p, pluginstorage)
+        target = construct_path(guid, p)
+        if !isfile(target)
+            @warn "tried to load non-existing storage"
+        else
+            open(target) do io
+                StructTypes.constructfrom!(pluginstorage, JSON3.read(io))
+            end
+        end
     end
     return pluginstorage
-end
-
-function load!(guid::Snowflake, p::AbstractPlugin)
-    target = construct_path(guid, p)
-    if !isfile(target)
-        @warn "tried to load non-existing storage"
-        return
-    end
-
-    guildstore = get(STORAGE, guid, nothing)
-    if guildstore === nothing
-        STORAGE[guid] = guildstore = GuildStorage(guid)
-    end
-    pluginstorage = get(guildstore.plugins, p, nothing)
-    if pluginstorage !== nothing
-        @warn "overwriting $p storage for guild $guid"
-    else
-        pluginstorage = create_storage(PLUGIN, p)
-        set!(guildstore.plugins, p, pluginstorage)
-    end
-    open(target) do io
-        StructTypes.constructfrom!(pluginstorage, JSON3.read(io))
-    end
 end
 
 function persist!(guid::Snowflake, p::AbstractPlugin)

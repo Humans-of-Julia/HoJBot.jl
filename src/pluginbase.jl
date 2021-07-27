@@ -3,7 +3,7 @@ module PluginBase
 export AbstractPlugin, AbstractPermission, is_permitted, grant!, revoke!, revokeall!, isenabled
 export register!, initialize!, shutdown!, create_storage #extend everwhere
 export get_storage #extend in new storage backends
-export identifier, plugin_by_identifier
+export identifier, lookup
 
 using Discord
 
@@ -12,10 +12,27 @@ abstract type AbstractPlugin end
 abstract type AbstractPermission end
 
 const INSTANCES = Dict{String, AbstractPlugin}()
+const PERMISSIONS = Dict{String, Type{<:AbstractPermission}}()
+
 const LOADED = AbstractPlugin[]
 
-function register!(p::AbstractPlugin)
-    INSTANCES[lowercase(identifier(p))] = p
+function pluginmap()
+    NamedTuple((Symbol(k), typeof(v))  for (k,v) in pairs(INSTANCES))
+end
+
+function permissionmap()
+    NamedTuple((Symbol(k), v)  for (k,v) in pairs(PERMISSIONS))
+end
+
+function register!(plug::AbstractPlugin; permissions=nothing)
+    INSTANCES[lowercase(identifier(plug))] = plug
+    if permissions!==nothing
+        for perm in permissions
+            id = identifier(plug, perm)
+            PERMISSIONS[id] = perm
+        end
+        
+    end
 end
 
 """
@@ -38,12 +55,16 @@ function initialize!(client::Client)
             # append!(waiting, subtypes(current))
         # else
             # pluginstance = current()
-        success = initialize!(client, current)
-        if success
-            push!(LOADED, current)
-            @info "$(identifier(current)) loaded"
-        else
-            push!(waiting, current)
+        try
+            success = initialize!(client, current)
+            if success
+                push!(LOADED, current)
+                @info "$(identifier(current)) loaded"
+            else
+                push!(waiting, current)
+            end
+        catch e
+            @warn e
         end
         # end
     end
@@ -64,26 +85,48 @@ Is called to initiate the shutdown of the plugins when the server is shutdown. R
 function shutdown!()
     while !isempty(LOADED)
         current = popfirst!(LOADED)
-        success = shutdown!(current)
-        if success
-            id = lowercase(identifier(current))
-            @info "$id unloaded"
-        else
-            push!(LOADED, current)
+        try
+            success = shutdown!(current)
+            if success
+                id = lowercase(identifier(current))
+                @info "$id unloaded"
+            else
+                push!(LOADED, current)
+            end
+        catch e
+            @warn e
         end
     end
     return isempty(LOADED)
 end
 
 function identifier(p::AbstractPlugin)
-    sym = string(typeof(p))
-    if !endswith(sym, "Plugin")
+    sym = lowercase(string(typeof(p).name.name))
+    if !endswith(sym, "plugin")
         @warn "$p doesn't use type name formatting, customize identifier function"
     end
-    return convert(String, lowercase(sym[1:end-6]))
+    return convert(String, sym[1:end-6])
 end
 
-plugin_by_identifier(s) = get(INSTANCES, lowercase(string(s)), nothing)
+function identifier(p::AbstractPlugin, perm::Type{T}) where {T<:AbstractPermission}
+    sym = identifier(p)*'.'*lowercase(string(T.name.name))
+    if endswith(sym, "permission")
+        return convert(String, sym[1:end-10])
+    else
+        # @warn "$perm doesn't use type name formatting, customize identifier function"
+        return convert(String, sym)
+    end
+end
+
+function lookup(s)
+    id = lowercase(string(s))
+    idx = findfirst(==('.'), id)
+    if idx===nothing
+        return get(INSTANCES, id, nothing)
+    else
+        return get(PERMISSIONS, id, nothing)
+    end
+end
 
 """
     help(::AbstractPlugin, args...; singleline=false)

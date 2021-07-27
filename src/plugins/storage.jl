@@ -14,7 +14,7 @@ const _FALLBACK_END=Ref{Union{AbstractStoragePlugin, Nothing}}(nothing)
 
 PluginBase.isenabled(guid::Snowflake, ::AbstractStoragePlugin) = true
 
-PluginBase.identifier(p::AbstractStoragePlugin) = string(typeof(p))
+PluginBase.identifier(p::AbstractStoragePlugin) = lowercase(string(typeof(p)))
 
 PluginBase.get_storage(m::Message, args...) = get_storage(m.guild_id, args...)
 
@@ -38,9 +38,9 @@ function set_default!(storage::AbstractStoragePlugin)
 end
 
 
-StructTypes.StructType(::Type{<:AbstractPlugin}) = StructTypes.CustomStruct()
-StructTypes.lowertype(::Type{<:AbstractPlugin}) = String
-StructTypes.lower(x::AbstractPlugin) = identifier(x)
-StructTypes.construct(::Type{AbstractPlugin}, x::String) = plugin_by_identifier(x)
+StructTypes.StructType(::Type{AbstractPlugin}) = StructTypes.AbstractType()
+StructTypes.StructType(::Type{T}) where {T<:AbstractPlugin} = StructTypes.UnorderedStruct()
+StructTypes.subtypekey(::Type{AbstractPlugin}) = :plugin
+StructTypes.subtypes(::Type{AbstractPlugin}) = PluginBase.pluginmap()
 
 end

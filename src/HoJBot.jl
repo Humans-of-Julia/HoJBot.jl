@@ -6,7 +6,8 @@ using Dates
 using Pretend
 using Discord
 using Discord: Snowflake
-include("discordhotfixes.jl")
+using StructTypes
+include("overwrites.jl")
 include("pluginbase.jl")
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
