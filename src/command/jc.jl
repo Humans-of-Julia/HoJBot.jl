@@ -118,14 +118,14 @@ end
 
 function jc_today(zonedDT::ZonedDateTime)
     @info "jc_today" zonedDT
-    if JuliaCon.get_today(now = zonedDT) === nothing
+    aux = JuliaCon.today(now = zonedDT, output = :text)
+    if aux === nothing
         not_today = "There is no JuliaCon program today!"
         @info not_today
         schedule = "(Full schedule: https://pretalx.com/juliacon2021/schedule)"
         return [not_today * "\n\n" * schedule]
     else
         strings = Vector{String}()
-        aux = JuliaCon.today(now = zonedDT, output = :text)
         tables, legend = aux[1:end-1], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)

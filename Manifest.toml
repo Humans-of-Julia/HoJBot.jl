@@ -247,8 +247,10 @@ uuid = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
 version = "1.9.0"
 
 [[JuliaCon]]
-deps = ["Dates", "Distributed", "Downloads", "JSON", "Logging", "Pkg", "Preferences", "PrettyTables", "TimeZones", "TimerOutputs"]
-git-tree-sha1 = "c754527a62c34e33fb0b81871f87f43c1684d036"
+deps = ["DataFrames", "Dates", "Distributed", "Downloads", "JSON", "Logging", "Pkg", "Preferences", "PrettyTables", "TimeZones", "TimerOutputs"]
+git-tree-sha1 = "4c5dae75bc9abc069c962ba3f495e8bca27d7426"
+repo-rev = "timezone"
+repo-url = "https://github.com/JuliaCon/JuliaCon.jl.git"
 uuid = "bfca5e61-7ca9-4d61-a82b-6df663fb0d3c"
 version = "2021.1.0"
 
