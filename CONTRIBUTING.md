@@ -38,9 +38,19 @@ julia --project=. -e 'using Pkg; Pkg.instantiate()'
 
 At this point, you can start running the bot.
 
+### Linux/Unix/Mac
+
 1. Locate your discord bot token from the Bot screen
 2. Define `HOJBOT_DISCORD_TOKEN` environment variable in your shell profile.
 3. Start the bot using either `script/run.sh` script, or `ENABLE_WARM_UP=0 script/run.sh`. The latter is useful if you want to test features other than the investment game and don't want to wait for the long warm up period needed for setting it up.
+
+### Windows/DOS
+
+In Windows, you do the similar thing as before but in powershell and slightly different ways.
+
+1. Locate your discord bot token from the Bot screen
+2. Define `HOJBOT_DISCORD_TOKEN` environment variable into your list of Environmental Variables or do it inside the console with `$env:HOJBOT_DISCORD_TOKEN=yourtoken`.
+3. Start the bot using either `.\script\run.ps1` powershell script, or `$env:ENABLE_WARM_UP=0 .\script\run.ps1`.
 
 Then, you can go to your own Discord server and enter some commands
 to see if it's working properly. For example:
