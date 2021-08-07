@@ -51,7 +51,7 @@ mock_ig_get_quote_100(symbol::AbstractString) = 100.0
 mock_currrent_date() = Date(2021, 1, 11)
 mock_reply(c::Client, m::Message, s::AbstractString) = nothing
 mock_upload_file(c::Client, ch::DiscordChannel, filename::AbstractString; kwargs...) = nothing
-mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
+mock_channel(c::Client, id::UInt64) = DiscordChannel(; id=0x00, type=0x00)
 
 function mock_retrieve_users(c::Client, ids::Vector{UInt64})
     return Dict(id => User(; id=id, username="$id") for id in ids)
@@ -209,8 +209,8 @@ mocked_client() = Client("hey")
 
     test_ig_cases("Executors") do
         c = Client("test")
-        m = Message(; id = 0x00, channel_id = 0x00)
-        u = User(; id = USER_ID3, username = USER_NAME)
+        m = Message(; id=0x00, channel_id=0x00)
+        u = User(; id=USER_ID3, username=USER_NAME)
         apply(
             discord_channel => mock_channel,
             discord_reply => mock_reply,
@@ -248,7 +248,7 @@ mocked_client() = Client("hey")
     end
 
     @testset "Charting" begin
-        dates = collect(Date(2021, 1, 1):Day(1):Date(2021,12,31))
+        dates = collect(Date(2021, 1, 1):Day(1):Date(2021, 12, 31))
         values = collect(1:365)
         @test_nowarn ig_chart("AAPL", dates, values)
     end

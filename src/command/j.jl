@@ -2,33 +2,33 @@
 
 function parse_doc(doc::AbstractString)
     doc = replace(doc, r"\n\n\n+" => "\n\n")
-    capture_ranges = [m.offset:m.offset+ncodeunits(m.match)-1
+    capture_ranges = [m.offset:m.offset + ncodeunits(m.match) - 1
         for m in eachmatch.(r"(```.+?```)"s, doc)
     ]
-    for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n",doc)
+    for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n", doc)
         if all(rg -> m.offset ∉ rg, capture_ranges)
             if m.captures[2] == "# "
                 doc = replace(doc, m.match => m.captures[1] *
                     "**" * m.captures[3] * "**\n" * "≡"^(length(m.captures[3])),
-                    count = 1
+                    count=1
                 )
             elseif m.captures[2] == "!!! "
                 doc = replace(doc, m.match => m.captures[1] *
                     "__" * m.captures[3] * "__\n",
-                    count = 1
+                    count=1
                 )
             else
                 doc = replace(doc, m.match => m.captures[1] *
                     "*" * m.captures[3] * "*\n" * "-"^(length(m.captures[3])),
-                    count = 1
+                    count=1
                 )
             end
         end
     end
     doc = replace(doc, r"(```.+)\n" => "```julia\n")
     doc = replace(doc, "```\n\n" => "```\n")
-    for m in eachmatch(r"\[([^ ]*)\]\(@ref\)",doc)
-        doc = replace(doc, m.match => "`"*m.captures[1]*"`", count = 1)
+    for m in eachmatch(r"\[([^ ]*)\]\(@ref\)", doc)
+        doc = replace(doc, m.match => "`" * m.captures[1] * "`", count=1)
     end
     return doc
 end
@@ -102,7 +102,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
             @__DIR__, "..", "..", "data", "docs", "all_docs.json")
         )
         if name in keys(all_names)
-            doc_in_pkgs = Dict{String, String}()
+            doc_in_pkgs = Dict{String,String}()
             for pkg in keys(all_names[name])
                 if pkg_in_name in ("", pkg)
                     push!(doc_in_pkgs, pkg => all_docs[pkg][name][2])
@@ -110,7 +110,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
             end
 
             if length(doc_in_pkgs) > 0
-                for (k,v) in doc_in_pkgs
+                for (k, v) in doc_in_pkgs
                     if k in ("Base", "Keywords")
                         doc = v
                     else
@@ -118,7 +118,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
                     end
                     doc = parse_doc(doc)
                     docs = split_message(doc,
-                        extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n", r"[^\s]+"]
+                        extrastyles=[r"\n.*\n≡.+\n", r"\n.*\n-+\n", r"[^\s]+"]
                     )
                     for doc_chunk in docs
                         # @info doc_chunk
@@ -156,9 +156,9 @@ function handle_doc_stats(c::Client, m::Message, captured1::AbstractString,
                 statsmgs = stats_namescount("namescount", name=captured2)
             end
         elseif captured1 in (" top", " bottom")
-            if captured2 != "" && all(isdigit,captured2)
+            if captured2 != "" && all(isdigit, captured2)
                 statsmgs = stats_namescount("namescount", place=strip(captured1),
-                    number=max(1, parse(Int,captured2))
+                    number=max(1, parse(Int, captured2))
                 )
             else
                 statsmgs = stats_namescount("namescount", place=strip(captured1))
@@ -177,7 +177,7 @@ function handle_julia_package_list(c::Client, m::Message)
     if isfile(all_docs_filename)
         all_docs = load_docs(all_docs_filename)
         msg = "Besides the **keywords** and **Base**, " *
-            "there are $(length(all_docs)-2) packages " *
+            "there are $(length(all_docs) - 2) packages " *
             "available with recorded names:\n\n" *
             join(sort(collect(keys(all_docs))), ", ") * "."
     else
