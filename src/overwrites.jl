@@ -3,21 +3,33 @@ module Overwrites
 using Discord, JSON3, StructTypes
 using JSON3: @check, realloc!
 
-function Discord.reply(c::Client, m::Message, content::AbstractString; at::Bool=false)
+module StrutTypes
+
+using StructTypes
+supertype(x::Type{T}) where T = nothing
+supertype(x::T) where T = supertype(T)
+
+function __init__()
+    Base.eval(StructTypes, :(supertype = $supertype))
+end
+
+end
+
+function Discord.reply(c::Client, m::Message, content::AbstractString; at::Bool=false, kwargs...)
     at && !ismissing(m.author) && (content = string(m.author, " ", content))
-    return create_message(c, m.channel_id; content=content, message_reference=(;message_id=m.id))
+    return create_message(c, m.channel_id; content=content, message_reference=(;message_id=m.id), kwargs...)
 end
 
 function Discord.reply(
     c::Client,
     m::Message,
     embed::Union{AbstractDict, NamedTuple, Embed};
-    at::Bool=false,
+    at::Bool=false, kwargs...
 )
     return if at && !ismissing(m.author)
-        create_message(c, m.channel_id; content=string(m.author), embed=embed, message_reference=(;message_id=m.id))
+        create_message(c, m.channel_id; content=string(m.author), embed=embed, message_reference=(;message_id=m.id), kwargs...)
     else
-        create_message(c, m.channel_id; embed=embed, message_reference=(;message_id=m.id))
+        create_message(c, m.channel_id; embed=embed, message_reference=(;message_id=m.id), kwargs...)
     end
 end
 
@@ -29,7 +41,7 @@ function JSON3.write(::StructTypes.DictType, buf, pos, len, x::T; kw...) where {
     while next !== nothing
         (k, v), state = next
 
-        buf, pos, len = JSON3.write(StructTypes.StructType(k), buf, pos, len, k; kw...)
+        buf, pos, len = JSON3.write(StructTypes.StringType(), buf, pos, len, JSON3.write(k); kw...)
         JSON3.@writechar ':'
         buf, pos, len = JSON3.write(StructTypes.StructType(v), buf, pos, len, v; kw...)
 
@@ -43,12 +55,11 @@ end
 @inline function JSON3.write(::Union{StructTypes.Struct, StructTypes.Mutable}, buf, pos, len, x::T; kw...) where {T}
     JSON3.@writechar '{'
     suptyp = supertype(T)
-    if StructTypes.StructType(suptyp) isa StructTypes.AbstractType
-        buf, pos, len = JSON3.write(StructTypes.StringType(), buf, pos, len, StructTypes.subtypekey(suptyp); kw...)
-        JSON3.@writechar ':'
-        buf, pos, len = JSON3.write(StructTypes.StringType(), buf, pos, len, find_type_identifier(suptyp, T); kw...)
-    end
+
     c = JSON3.WriteClosure(buf, pos, len, false, values(kw))
+    if suptyp!==nothing && StructTypes.StructType(suptyp) isa StructTypes.AbstractType
+        c(0, StructTypes.subtypekey(suptyp), Symbol, find_type_identifier(suptyp, T))
+    end
     StructTypes.foreachfield(c, x)
     buf = c.buf
     pos = c.pos
@@ -61,7 +72,7 @@ end
 
 function StructTypes.constructfrom!(::StructTypes.DictType, target::AbstractDict{K,V}, source) where {K,V}
     for (k,v) in pairs(source)
-        target[StructTypes.constructfrom(K, k)] = StructTypes.constructfrom(V, v)
+        target[StructTypes.constructfrom(K, JSON3.read(string(k)))] = StructTypes.constructfrom(V, v)
     end
     return target
 end

@@ -14,7 +14,13 @@ const _FALLBACK_END=Ref{Union{AbstractStoragePlugin, Nothing}}(nothing)
 
 PluginBase.isenabled(guid::Snowflake, ::AbstractStoragePlugin) = true
 
-PluginBase.identifier(p::AbstractStoragePlugin) = lowercase(string(typeof(p)))
+function PluginBase.identifier(p::AbstractStoragePlugin)
+    sym = lowercase(string(typeof(p).name.name))
+    if !endswith(sym, "backend")
+        @warn "$p doesn't use type name formatting, customize identifier function"
+    end
+    return convert(String, sym)
+end
 
 PluginBase.get_storage(m::Message, args...) = get_storage(m.guild_id, args...)
 
@@ -42,5 +48,12 @@ StructTypes.StructType(::Type{AbstractPlugin}) = StructTypes.AbstractType()
 StructTypes.StructType(::Type{T}) where {T<:AbstractPlugin} = StructTypes.UnorderedStruct()
 StructTypes.subtypekey(::Type{AbstractPlugin}) = :plugin
 StructTypes.subtypes(::Type{AbstractPlugin}) = PluginBase.pluginmap()
+StructTypes.supertype(::Type{T}) where {T<:AbstractPlugin} = AbstractPlugin
+
+StructTypes.StructType(::Type{AbstractPermission}) = StructTypes.AbstractType()
+StructTypes.StructType(::Type{T}) where {T<:AbstractPermission} = StructTypes.UnorderedStruct()
+StructTypes.subtypekey(::Type{AbstractPermission}) = :permission
+StructTypes.subtypes(::Type{AbstractPermission}) = PluginBase.permissionmap()
+StructTypes.supertype(::Type{T}) where {T<:AbstractPermission} = AbstractPermission
 
 end

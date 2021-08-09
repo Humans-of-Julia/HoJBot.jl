@@ -26,7 +26,7 @@ end
 
 function handle(c::Client, m::Message)
     isenabled(m.guild_id, m.channel_id, PLUGIN) || return
-    is_permitted(c, m, PERM) || return
+    ispermitted(c, m, PERM) || return
     args = split(m.content)
     if length(args) < 3
         reply(c, m, "Unknown command")

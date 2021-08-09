@@ -34,8 +34,17 @@ function __init__()
     set_default!(PLUGIN)
 end
 
-function PluginBase.initialize!(client::Client, p::AbstractStoragePlugin)
+function PluginBase.initialize!(client::Client, p::FileBackend; force_load=false)
     # loading on demand
+    walker = walkdir("data")
+    guilds = first(walker)[2]
+    foreach(zip(guilds, walker)) do (g, entr)
+        guild = parse(Snowflake, g)
+        foreach(entr[3]) do plugfile
+            plug = lookup(plugfile[1:findfirst(==('.'),plugfile)-1])
+            get_storage(guild, plug, p, force_load=force_load)
+        end
+    end
     return true
 end
 
@@ -47,7 +56,6 @@ function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, ::FileBacken
     pluginstorage = get(guildstore.plugins, p, nothing)
     if pluginstorage === nothing || force_load
         pluginstorage = create_storage(PLUGIN, p)
-        set!(guildstore.plugins, p, pluginstorage)
         target = construct_path(guid, p)
         if !isfile(target)
             @warn "tried to load non-existing storage"
@@ -56,6 +64,7 @@ function PluginBase.get_storage(guid::Snowflake, p::AbstractPlugin, ::FileBacken
                 StructTypes.constructfrom!(pluginstorage, JSON3.read(io))
             end
         end
+        set!(guildstore.plugins, p, pluginstorage)
     end
     return pluginstorage
 end
@@ -70,11 +79,19 @@ function persist!(guid::Snowflake, p::AbstractPlugin)
     end
 end
 
+function persist!(guid::Snowflake, storage=get(STORAGE, guid, nothing))
+    if storage===nothing
+        @warn "can't persist guild $guid because the corresponding storage wasn't found"
+        return
+    end
+    for p in keys(storage.plugins)
+        persist!(guid, p)
+    end
+end
+
 function PluginBase.shutdown!(::FileBackend)
     for (guid, storage) in pairs(STORAGE)
-        for p in keys(storage.plugins)
-            persist!(guid, p)
-        end
+        persist!(guid, storage)
     end
     return true
 end

@@ -1,11 +1,12 @@
 module PluginBase
 
-export AbstractPlugin, AbstractPermission, is_permitted, grant!, revoke!, revokeall!, isenabled
+export AbstractPlugin, AbstractPermission, ispermitted, grant!, revoke!, revokeall!, isenabled
 export register!, initialize!, shutdown!, create_storage #extend everwhere
 export get_storage #extend in new storage backends
 export identifier, lookup
 
 using Discord
+include("helpers.jl")
 
 abstract type AbstractPlugin end
 
@@ -94,7 +95,7 @@ function shutdown!()
                 push!(LOADED, current)
             end
         catch e
-            @warn e
+            @warn e stacktrace(catch_backtrace())
         end
     end
     return isempty(LOADED)
@@ -147,7 +148,7 @@ function create_storage end
 function get_storage end
 
 "DON'T confuse with has_permission"
-function is_permitted end
+function ispermitted end
 
 function grant! end
 

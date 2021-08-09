@@ -15,6 +15,7 @@ struct CreateQueue <: AbstractPermission end
 struct ManageQueue <: AbstractPermission
     queue::Symbol
 end
+ManageQueue(q::AbstractString) = ManageQueue(qsym(q))
 
 function __init__()
     register!(PLUGIN, permissions=(CreateQueue, ManageQueue))
@@ -38,36 +39,37 @@ function handle(c::Client, m::Message)
         reply(c, m, "you need a subcommand")
         return
     end
+    @info "on the go"
     subcommand = args[2]
-    if subcommand == "join!"
-        reply(c, m, sub_join!(m.guild_id, m.author.id, args[3]))
+    if subcommand == "position"
+    reply(c, m, sub_position(m.guild_id, m.author.id))
+    elseif subcommand == "help"
+        reply(c, m, help_message())
+    elseif length(args)<3
+        reply(c, m, "missing queue argument")
+    elseif (queuename=args[3]; false)
+    elseif subcommand == "join!"
+        reply(c, m, sub_join!(m.guild_id, m.author.id, queuename))
     elseif subcommand == "leave!"
-        reply(c, m, sub_leave!(m.guild_id, m.author.id, args[3]))
+        reply(c, m, sub_leave!(m.guild_id, m.author.id, queuename))
     elseif subcommand == "list"
-        sub_list(c, m, args[3])
-    elseif subcommand == "position"
-        reply(c, m, sub_position(m.guild_id, m.author.id))
+        ret = sub_list(m.guild_id, queuename)
+        reply(c, m, ret; allowed_mentions=(parse=(),))
     elseif subcommand == "pop!"
-        if !is_permitted(c, m, ManageQueue(Symbol(args[3])))
-            reply(c, m, "you are not allowed to manage queue $(args[3])")
-        else
-            reply(c, m, sub_pop!(m.guild_id, args[3]))
+        if ispermitted(c, m, ManageQueue(queuename), "you are not allowed to manage queue $queuename")
+            reply(c, m, sub_pop!(m.guild_id, queuename))
         end
+    elseif subcommand == "delete!"
+        if ispermitted(c, m, CreateQueue(), "you are not allowed to delete queues")
+            reply(c, m, sub_delete!(m.guild_id, queuename))
+        end
+    elseif length(args)<4
+        reply(c, m, "missing role argument")
+    elseif (role=role_id(args[4]); role===nothing)
+        reply(c, m, "invalid role")
     elseif subcommand == "create!"
-        if !is_permitted(c, m, CreateQueue())
-            reply(c, m, "you are not allowed to create queues")
-        elseif length(args)<4
-            reply(c, m, "missing arguments")
-        elseif (queuename=args[3]; role=args[4]; role[1]!='<' || role[2]!='@' || role[3]!='&' || role[end]!='>')
-            reply(c, m, "invalid role")
-        else
-            reply(c, m, sub_create!(m.guild_id, queuename, parse(Snowflake, role[4:end-1])))
-        end
-    elseif subcommand == "remove!"
-        if !is_permitted(c, m, CreateQueue())
-            reply(c, m, "you are not allowed to remove queues")
-        else
-            reply(c, m, sub_remove!(m.guild_id, args[3]))
+        if ispermitted(c, m, CreateQueue(), "you are not allowed to create queues")
+            reply(c, m, sub_create!(m.guild_id, queuename, role))
         end
     else
         reply(c, m, help_message())
@@ -75,12 +77,12 @@ function handle(c::Client, m::Message)
 end
 
 # (Val{:q}, Val{:join!}, queuename::String)#`q join! <queue>` adds user to queue
-# (Val{:q}, Val{:leave!}, queuename::String)# `q leave! <queue>` removes user from queue
+# (Val{:q}, Val{:leave!}, queuename::String)# `q leave! <queue>` deletes user from queue
 # (Val{:q}, Val{:list}, queuename::String)# `q list <queue>` lists the specified queue
 # (Val{:q}, Val{:position})# `q position` shows the current position in every queue
-# (Val{:q}, Val{:pop!}, queuename::String)# `q pop! <name>` removes the user with the first position from the queue
+# (Val{:q}, Val{:pop!}, queuename::String)# `q pop! <name>` deletes the user with the first position from the queue
 # (Val{:q}, Val{:create!}, queuename::String, role::Snowflake)# `q create! <name> <role>` creates a new queue that is managed by <role>
-# (Val{:q}, Val{:remove!}, queuename::String)# `q remove! <name>` removes an existing queue
+# (Val{:q}, Val{:delete!}, queuename::String)# `q delete! <name>` deletes an existing queue
 # (Val{:q}, Val{:help})# `q help` returns this help
 
 
@@ -111,16 +113,13 @@ function sub_leave!(guid::Snowflake, user::Snowflake, queuename::AbstractString)
     end
 end
 
-function sub_list(c::Client, m::Message, queuename::AbstractString)
-    pluginstorage = get_storage(m, PLUGIN)
+function sub_list(guid::Snowflake, queuename::AbstractString)
+    pluginstorage = get_storage(guid, PLUGIN)
     queue = get(pluginstorage, qsym(queuename), nothing)
     if queue===nothing
-        reply(c, m, """Queue $queuename does not exist.""")
+        return """Queue $queuename does not exist."""
     else
-        newtext = join(("$pos: <@$name>" for (pos, name) in enumerate(queue)), "\r\n")
-        msg = reply(c, m, "placeholder for non-ping")
-        fetched = fetchval(msg)
-        edit_message(c, fetched.channel_id, fetched.id, content=newtext)
+        return join(("$pos: <@$name>" for (pos, name) in enumerate(queue)), "\r\n")
     end
     return nothing
 end
@@ -150,15 +149,16 @@ function sub_create!(guid::Snowflake, queuename::AbstractString, role::Snowflake
         return "Queue $queuename already exists."
     else
         pluginstorage[qsymbol] = Snowflake[]
-        grant!(guid, role, ManageQueue(Symbol(queuename)))
+        grant!(guid, role, ManageQueue(qsymbol))
         return "Queue $queuename created. <@&$role> can manage it."
     end
 end
 
-function sub_remove!(guid::Snowflake, queuename::AbstractString)
+function sub_delete!(guid::Snowflake, queuename::AbstractString)
     pluginstorage = get_storage(guid, PLUGIN)
-    delete!(pluginstorage, qsym(queuename))
-    revokeall!(guid, ManageQueue(Symbol(queuename)))
+    qsymbol = qsym(queuename)
+    delete!(pluginstorage, qsymbol)
+    revokeall!(guid, ManageQueue(qsymbol))
     return "Queue $queuename deleted."
 end
 
@@ -168,12 +168,12 @@ function help_message()
 
     Here is the list of all available `q` commands and their use:
     `q join! <queue>` adds user to queue
-    `q leave! <queue>` removes user from queue
+    `q leave! <queue>` deletes user from queue
     `q list <queue>` lists the specified queue
     `q position` shows the current position in every queue
-    `q pop! <queue>` removes the user with the first position from the queue
+    `q pop! <queue>` deletes the user with the first position from the queue
     `q create! <queue> <role>` creates a new queue that is managed by <role>
-    `q remove! <queue>` removes an existing queue
+    `q delete! <queue>` deletes an existing queue
     `q help` returns this help
     """
 end
