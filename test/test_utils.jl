@@ -2,7 +2,7 @@ using HoJBot:
     replace_newlines,
     is_real_user, is_bot,
     flipper, previous, next
-using Discord: User
+using Discord:User
 
 @testset "utilities" begin
 
@@ -12,7 +12,7 @@ using Discord: User
         @test replace_newlines("a\nb \n\n") == "a b   "
     end
 
-    let user = User(; id = 1, bot = false), bot = User(; id = 2, bot = true)
+    let user = User(; id=1, bot=false), bot = User(; id=2, bot=true)
         @test is_real_user(user) === true
         @test is_real_user(bot) === false
         @test is_bot(user) === false

@@ -1,5 +1,5 @@
 # Reactors
-#
+# 
 # On every MessageCreate event, we can apply a reaction to the message.
 # The code below can be easily extends by defining a subtype of
 # `AbstractReactor` and implement the respective interface methods.
@@ -76,7 +76,7 @@ struct ExcitedReactor <: AbstractReactor end
 function reactions(::ExcitedReactor, m::Message)
     if contains_any(m.content, REACT_WORDS[:excited]) &&
             !contains_any(m.content, REACT_WORDS[:disappointed])
-        return ['🤩']
+    return ['🤩']
     end
     return NO_REACTION
 end

@@ -152,7 +152,7 @@ end
 function ig_execute(c::Client, m::Message, user::User, ::Val{:perf}, args)
     ig_affirm_player(user.id)
     df = ig_perf(user.id)
-    table = pretty_table(String, df; header = names(df))
+    table = pretty_table(String, df; header=names(df))
     discord_reply(
         c, m,
         ig_hey(user.username, """your stocks' performance today:
@@ -168,7 +168,7 @@ end
 function ig_execute(c::Client, m::Message, user::User, ::Val{:gl}, args)
     ig_affirm_player(user.id)
     df = ig_gain_loss(user.id)
-    table = pretty_table(String, df; header = names(df))
+    table = pretty_table(String, df; header=names(df))
     discord_reply(
         c, m,
         ig_hey(user.username, """here are the gains/losses for your stocks:
@@ -193,7 +193,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:hist}, args)
 
     df = ig_hist(user.id, symbol)
     if nrow(df) > 0
-        table = pretty_table(String, df; header = names(df))
+        table = pretty_table(String, df; header=names(df))
         discord_reply(
             c, m,
             ig_hey(user.username, """here is the purchase history$clause:
@@ -218,11 +218,11 @@ function ig_perf(user_id::UInt64)
     prices_change = prices_today .- prices_yesterday
     prices_change_pct = prices_change ./ prices_yesterday * 100
     df = DataFrame(
-        symbol = symbols,
-        px_eod = prices_yesterday,
-        px_now = prices_today,
-        chg = round.(prices_change; digits = 2),
-        pct_chg = round.(prices_change_pct; digits = 1),
+        symbol=symbols,
+        px_eod=prices_yesterday,
+        px_now=prices_today,
+        chg=round.(prices_change; digits=2),
+        pct_chg=round.(prices_change_pct; digits=1),
     )
     rename!(df, "pct_chg" => "% chg")
     sort!(df, :symbol)
@@ -236,8 +236,8 @@ function ig_gain_loss(user_id::UInt64)
     rename!(df, "purchase_price" => "px_buy")
 
     df.px_now = fetch.(@async(ig_get_quote(s)) for s in df.symbol)
-    df.chg = round.(df.px_now .- df.px_buy; digits = 2)
-    df.pct_chg = round.(df.chg ./ df.px_buy * 100; digits = 1)
+    df.chg = round.(df.px_now .- df.px_buy; digits=2)
+    df.pct_chg = round.(df.chg ./ df.px_buy * 100; digits=1)
     rename!(df, "pct_chg" => "% chg")
 
     df.shares = round.(Int, df.shares)
@@ -291,7 +291,7 @@ end
 function ig_reformat_view!(df::AbstractDataFrame)
     select!(df, Not(:purchase_price))
     rename!(df, "current_price" => "price", "market_value" => "amount")
-    return df
+return df
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
@@ -315,7 +315,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:chart}, args)
     df = ig_historical_prices(symbol, from_date, to_date)
     filename = ig_chart(symbol, df.Date, df."Adj Close")
     discord_upload_file(c, ch, filename;
-        content = ig_hey(user.username, "here is the chart for $symbol for the past $lookback. " *
+        content=ig_hey(user.username, "here is the chart for $symbol for the past $lookback. " *
             "To plot a chart with different time horizon, " *
             "try something like `ig chart $symbol 90d` or `ig chart $symbol 10y`."))
     return nothing
@@ -352,20 +352,20 @@ function ig_ranking_table(c::Client)
         @debug "ig_ranking_table" valuations
         @debug "ig_ranking_table" users_dict
         df = DataFrame(
-            rank = 1:length(valuations),
-            player = [users_dict[v.id].username for v in valuations],
-            portfolio_value = [v.total for v in valuations],
+            rank=1:length(valuations),
+            player=[users_dict[v.id].username for v in valuations],
+            portfolio_value=[v.total for v in valuations],
         )
         return df
     else
-        return DataFrame(player = String[], portfolio_value = Float64[])
+        return DataFrame(player=String[], portfolio_value=Float64[])
     end
 end
 
 @mockable function retrieve_users(c::Client, ids::Vector{UInt64})
     futures = retrieve.(Ref(c), User, ids)
     responses = fetch.(futures)
-    unknown = User(; id = UInt64(0), username = "Unknown")
+    unknown = User(; id=UInt64(0), username="Unknown")
     return Dict(k => res.val === nothing ? unknown : res.val for (k, res) in zip(ids, responses))
 end
 
@@ -380,14 +380,14 @@ function ig_value_all_portfolios()
         total = mv + cash
         push!(valuations, (; id, mv, cash, total))
     end
-    sort!(valuations; lt = (x,y) -> x.total < y.total, rev = true)
+    sort!(valuations; lt=(x, y) -> x.total < y.total, rev=true)
     # @info "ig_value_all_portfolios result" valuations
     return valuations
 end
 
 "Format money amount"
-format_amount(x::Real) = format(x, commas = true, precision = 2)
-format_amount(x::Integer) = format(x, commas = true)
+format_amount(x::Real) = format(x, commas=true, precision=2)
+format_amount(x::Integer) = format(x, commas=true)
 
 "Pretty table formatters"
 decimal_formatter(v, i, j) = v isa Real ? format_amount(v) : v
@@ -456,7 +456,7 @@ function ig_user_id_from_path(path::AbstractString)
     filename = basename(path)
     filename_without_extension = replace(filename, r"\.json$" => "")
     return parse(UInt64, filename_without_extension)
-end
+    end
 
 "Load all game files"
 function ig_load_all_portfolios()
@@ -479,7 +479,7 @@ function ig_buy(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_real_time_price(symbol)
+    current_price::Real=ig_real_time_price(symbol)
 )
     @debug "Buying stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -500,8 +500,8 @@ function ig_sell(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_real_time_price(symbol)
-)
+    current_price::Real=ig_real_time_price(symbol)
+    )
     @debug "Selling stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
     pf_new = ig_sell_fifo(pf, symbol, shares, current_price)
@@ -529,7 +529,7 @@ function ig_sell_fifo(pf::IgPortfolio, symbol::AbstractString, shares::Real, cur
     pf_new = IgPortfolio(pf.cash + proceeds, holdings)
     remaining = shares   # keep track of how much to sell
     for h in pf.holdings
-        if h.symbol != symbol || remaining == 0
+            if h.symbol != symbol || remaining == 0
             push!(holdings, h)
         else
             if h.shares > remaining  # relief lot partially
@@ -538,7 +538,7 @@ function ig_sell_fifo(pf::IgPortfolio, symbol::AbstractString, shares::Real, cur
                 remaining = 0
             else # relief this lot completely and continue
                 remaining -= h.shares
-            end
+end
         end
     end
     return pf_new
@@ -554,10 +554,10 @@ See also: `ig_grouped_holdings`(@ref)
 """
 function ig_holdings_data_frame(pf::IgPortfolio)
     return DataFrame(
-        symbol = [h.symbol for h in pf.holdings],
-        shares = [h.shares for h in pf.holdings],
-        purchase_price = [h.purchase_price for h in pf.holdings],
-        purchase_date = [h.date for h in pf.holdings],
+        symbol=[h.symbol for h in pf.holdings],
+        shares=[h.shares for h in pf.holdings],
+        purchase_price=[h.purchase_price for h in pf.holdings],
+purchase_date=[h.date for h in pf.holdings],
     )
 end
 
@@ -602,7 +602,7 @@ end
 "Format data frame using pretty table"
 function ig_view_table(::PrettyView, df::AbstractDataFrame)
     return pretty_table(String, df;
-        formatters = integer_formatter, header = names(df))
+        formatters=integer_formatter, header=names(df))
 end
 
 "Return portfolio view as string in a simple format"
@@ -660,7 +660,7 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
             throw(IgUserError("there is no historical prices for $symbol. Is it a valid stock symbol?"))
         else
             rethrow()
-        end
+end
     end
 end
 
@@ -688,7 +688,7 @@ end
 function ig_chart(symbol::AbstractString, dates::Vector{Date}, values::Vector{<:Real})
     from_date, to_date = extrema(dates)
     last_price_str = format_amount(last(values))
-    c = crplot(dates, values; xticks = 5, yticks = 10, title="$symbol Historical Prices ($from_date to $to_date)\nLast price: $last_price_str")
+    c = crplot(dates, values; xticks=5, yticks=10, title="$symbol Historical Prices ($from_date to $to_date)\nLast price: $last_price_str")
     filename = tempname() * ".png"
     CairoPlot.write_to_png(c, filename)
     return filename
@@ -699,13 +699,13 @@ end
 "Find lots for a specific stock in the portfolio. Sort by purchase date."
 function ig_find_lots(pf::IgPortfolio, symbol::AbstractString)
     lots = IgHolding[x for x in pf.holdings if x.symbol == symbol]
-    return sort(lots, lt = (x,y) -> x.date < y.date)
+    return sort(lots, lt=(x, y) -> x.date < y.date)
 end
 
 "Return total number of shares for a specific stock in the portfolio."
 function ig_count_shares(pf::IgPortfolio, symbol::AbstractString)
     lots = ig_find_lots(pf, symbol)
-    return length(lots) > 0 ? round(sum(lot.shares for lot in lots); digits = 0) : 0
+    return length(lots) > 0 ? round(sum(lot.shares for lot in lots); digits=0) : 0
     # note that we store shares as Float64 but uses it as Int (for now)
 end
 

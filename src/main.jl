@@ -20,12 +20,12 @@ end
 function start_bot(;
     commands=ACTIVE_COMMANDS,
     handlers=HANDLERS_LIST,
-    run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
+    run_duration=Minute(365 * 24 * 60),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(
         ENV["HOJBOT_DISCORD_TOKEN"];
-        presence=(game=(name="HoJ", type=AT_GAME),),
+        presence=(game = (name = "HoJ", type = AT_GAME),),
         prefix=COMMAND_PREFIX,
     )
     init_handlers!(client, handlers)
