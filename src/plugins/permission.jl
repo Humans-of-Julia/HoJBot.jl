@@ -68,7 +68,7 @@ function PluginBase.ispermitted(client::Client, m::Message, perm::AbstractPermis
     isadmin = ispermitted(client, m, AdminPermission())
     allowed = _ispermitted(m.guild_id, m.member.roles, perm)
     @info "permission is being checked" author=m.author.id admin=isadmin roles=join(m.member.roles, ", ") permission=perm success=allowed
-    return #=isadmin ||=# allowed
+    return isadmin || allowed
 end
 
 function _ispermitted(guid::Snowflake, roles::Vector{Snowflake}, perm::AbstractPermission)
