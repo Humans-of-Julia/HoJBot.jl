@@ -168,16 +168,24 @@ end
 function ig_execute(c::Client, m::Message, user::User, ::Val{:gl}, args)
     ig_affirm_player(user.id)
     df = ig_gain_loss(user.id)
-    table = pretty_table(String, df; header = names(df))
+    page_size = 25  # approximate table size before exceeding Discord 2,000 char limit
+    for (i, subdf) in enumerate(partition_table(df, page_size))
+        if i == 1
     discord_reply(
         c, m,
-        ig_hey(user.username, """here are the gains/losses for your stocks:
+                ig_hey(user.username, "here are the gains/losses for your stocks:")
+            )
+        end
+        table = pretty_table(String, subdf; header = names(subdf))
+        discord_reply(
+            c, m,
+            """
             ```
             $table
             ```
             """
         )
-    )
+    end
     return nothing
 end
 
@@ -394,7 +402,13 @@ decimal_formatter(v, i, j) = v isa Real ? format_amount(v) : v
 integer_formatter(v, i, j) = v isa Real ? format_amount(round(Int, v)) : v
 
 "Hey someone"
-ig_hey(username::AbstractString, message::AbstractString) = "Hey, " * username * ", " * message
+function ig_hey(username::AbstractString, message::AbstractString)
+    s = "Hey, " * username * ", " * message
+    threshold = 1800
+    len = length(s)
+    len > threshold && @warn("Message size $len is close to Discord's 2,000 limit.")
+    return s
+end
 
 "File location of the game file for a user"
 ig_file_path(user_id::UInt64) = joinpath(ig_data_directory(), "$user_id.json")
