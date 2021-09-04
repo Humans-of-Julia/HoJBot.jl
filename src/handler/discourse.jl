@@ -2,7 +2,7 @@ function handler(c::Client, e::MessageReactionAdd, ::Val{:discourse})
 
     # Only handle this event when message corresponds to a previous
     # Discourse query.
-    isfile(discourse_file_path(e.message_id)) || return 
+    isfile(discourse_file_path(e.message_id)) || return
 
     user = @discord retrieve(c, User, e.user_id)
     @info "discourse handler" user.username user.discriminator user.bot

@@ -44,7 +44,7 @@ function list_of_pkgs()::Vector{String}
     for pkg in keys(Pkg.project().dependencies)
         push!(pkgs, pkg)
     end
-    @info "$(length(pkgs)-2) packages found besides Base and the set of keywords"
+    @info "$(length(pkgs) - 2) packages found besides Base and the set of keywords"
     return pkgs
 end
 
@@ -58,8 +58,8 @@ corresponding docstring.
 
 Only names with meaningful docstrings are retrieved.
 """
-function get_pkg_docs(pkg::String)::Dict{String, Vector{String}}
-    pkg_docs = Dict{String, Vector{String}}()
+function get_pkg_docs(pkg::String)::Dict{String,Vector{String}}
+    pkg_docs = Dict{String,Vector{String}}()
     num_exported = 0
     try
         let
@@ -89,8 +89,8 @@ end
 Return a Dict with the packages as keys and the info about the package
 as values (see [get_pkg_docs](@ref)).
 """
-function get_all_docs()::Dict{String, Dict{String, Vector{String}}}
-    all_docs = Dict{String, Dict{String, Vector{String}}}()
+function get_all_docs()::Dict{String,Dict{String,Vector{String}}}
+    all_docs = Dict{String,Dict{String,Vector{String}}}()
     Keywords = [
         "baremodule", "begin", "break", "catch", "const",
         "continue", "do", "else", "elseif", "end", "export", "false",
@@ -101,7 +101,7 @@ function get_all_docs()::Dict{String, Dict{String, Vector{String}}}
     ]
     for pkg in list_of_pkgs()
         if pkg == "Keywords"
-            pkg_docs = Dict{String, Vector{String}}()
+            pkg_docs = Dict{String,Vector{String}}()
             for name in Keywords
                 if !startswith(string(name), "#")
                     doc = string(eval(:(Base.Docs.@doc $(Symbol(name)))))
@@ -119,7 +119,7 @@ function get_all_docs()::Dict{String, Dict{String, Vector{String}}}
             end
         end
     end
-    @info "$(length(all_docs)-2) packages found with docstrings"
+    @info "$(length(all_docs) - 2) packages found with docstrings"
     return all_docs
 end
 
@@ -128,7 +128,7 @@ end
 
 Save all available documentation info as a JSON file with the given filename.
 """
-function save_docs(filename::String, all_docs::Dict{String, Dict{String, Vector{String}}})::Nothing
+function save_docs(filename::String, all_docs::Dict{String,Dict{String,Vector{String}}})::Nothing
     write(filename, JSON.json(all_docs, 4))
     return nothing
 end
@@ -139,9 +139,9 @@ end
 Return a Dict with the all the available documentation info present
 in the given JSON file.
 """
-function load_docs(filename)::Dict{String, Dict{String, Vector{String}}}
+function load_docs(filename)::Dict{String,Dict{String,Vector{String}}}
     all_docs = JSON.parsefile(filename)
-    all_docs = convert(Dict{String, Dict{String, Vector{String}}}, docs)
+    all_docs = convert(Dict{String,Dict{String,Vector{String}}}, docs)
     return all_docs
 end
 
@@ -153,7 +153,7 @@ the values is another Dict whose keys are the packages where the name appears
 in and the values indicate whether the name is "exported" from the packaged or
 "nonexported".
 """
-function get_all_names(all_docs::Dict{String, Dict{String, Vector{String}}})::Dict{String,Dict{String,String}}
+function get_all_names(all_docs::Dict{String,Dict{String,Vector{String}}})::Dict{String,Dict{String,String}}
     all_names = Dict{String,Dict{String,String}}()
     for (pkg, docs) in all_docs
         for name in keys(docs)
@@ -220,4 +220,3 @@ end
 if abspath(PROGRAM_FILE) == @__FILE__
     main()
 end
-

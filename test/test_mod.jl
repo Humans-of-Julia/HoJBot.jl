@@ -9,7 +9,7 @@ HoJBot.mod_init()
     function test_matches(regex, strs, expected)
         for i in 1:length(strs)
             @test (match(regex, strs[i]) !== nothing) == expected[i]
-        end         
+        end
     end
 
     # regular word

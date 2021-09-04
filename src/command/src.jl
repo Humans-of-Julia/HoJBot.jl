@@ -27,8 +27,8 @@ function help_commander(c::Client, m::Message, ::Val{:source})
     ]))
 
     reply(
-        c, 
-        m, 
+        c,
+        m,
         """
         Returns the source file of the command.
         Usage: `src <command>`

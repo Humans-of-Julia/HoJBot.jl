@@ -49,7 +49,7 @@ end
 
 function help_time_zone_aliases(c::Client, m::Message)
     # @info "Sending aliases for message" m.id m.author
-    aliases = join(sort(["$(rpad(k, 12)) => $v" for (k,v) in CITY_ALIASES]), "\n")
+    aliases = join(sort(["$(rpad(k, 12)) => $v" for (k, v) in CITY_ALIASES]), "\n")
     reply(c, m, """
         tz command's time zone aliases are:
         ```
@@ -113,8 +113,8 @@ end
 function convert_time(t::ZonedDateTime)
     display_format = "yyyy-mm-dd II:MMp"
     return [let
-            datetime = astimezone(t, TimeZone(city))
-            display = Dates.format(datetime, display_format) * " $alias"
-            (;alias, datetime, display)
-        end for (alias, city) in CITY_ALIASES]
+        datetime = astimezone(t, TimeZone(city))
+        display = Dates.format(datetime, display_format) * " $alias"
+        (;alias, datetime, display)
+    end for (alias, city) in CITY_ALIASES]
 end

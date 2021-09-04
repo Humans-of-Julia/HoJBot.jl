@@ -29,14 +29,14 @@ function jc_execute(c, m, ::Val{:now}, args)
     # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
     @info "now command" tz_arg current
 
-    if isempty(JuliaCon.get_running_talks(now = current))
+    if isempty(JuliaCon.get_running_talks(now=current))
         not_now = "There is no JuliaCon program now."
         @info not_now
         today = " Try `jc today`"
         schedule = "(Full schedule: https://live.juliacon.org/agenda)"
         reply(c, m, not_now * today * "\n" * schedule)
     else
-        reply(c, m, JuliaCon.now(now = current, output=:text))
+        reply(c, m, JuliaCon.now(now=current, output=:text))
     end
     return nothing
 end
@@ -44,7 +44,7 @@ end
 function jc_execute(c, m, ::Val{:today}, args)
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
     dt = now(TimeZone(tz_arg))
-    jc_today(c, m, dt)
+jc_today(c, m, dt)
     return nothing
 end
 
@@ -57,7 +57,7 @@ end
 
 function jc_execute(c, m, ::Val{:next}, args)
     @info "Calling :next"
-end
+    end
 
 function jc_execute(c, m, ::Val{:day}, args)
     zonedDT = ZonedDateTime(Date(args[1]), tz"UTC")
@@ -107,7 +107,7 @@ function split_pretty_table(str)
             acc = "```\n" * line
         end
     end
-    push!(strings, acc * "\n```")
+push!(strings, acc * "\n```")
     return strings
 end
 
@@ -118,18 +118,18 @@ end
 
 function jc_today(zonedDT::ZonedDateTime)
     @info "jc_today" zonedDT
-    aux = JuliaCon.today(now = zonedDT, output = :text)
+    aux = JuliaCon.today(now=zonedDT, output=:text)
     if aux === nothing
         not_today = "There is no JuliaCon program at $(zonedDT)"
         schedule = "(Full schedule: https://live.juliacon.org/agenda)"
         return [not_today * "\n" * schedule]
     else
         strings = Vector{String}()
-        tables, legend = aux[1:end-1], aux[end]
+        tables, legend = aux[1:end - 1], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
-        end
-        push!(strings, legend)
+    end
+push!(strings, legend)
         return strings
     end
 end

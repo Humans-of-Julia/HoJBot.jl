@@ -6,7 +6,7 @@ end
 struct BadWord
     class::WordClass
     word::String
-end
+    end
 
 const WordClassStrings = Dict(
     Bad => "Bad",

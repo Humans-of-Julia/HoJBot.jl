@@ -61,7 +61,7 @@ function discourse_search(
     c::Client,
     m::Message,
     endpoint::AbstractString,
-    params::Dict{Symbol, S},
+    params::Dict{Symbol,S},
     topic_fn::Function,
     make_post_fn::Function
 ) where {S <: AbstractString}
@@ -82,7 +82,7 @@ Execute a query and return `DiscourseData` object.
 """
 function discourse_execute_query(
     endpoint::AbstractString,
-    params::Dict{Symbol, S},
+    params::Dict{Symbol,S},
     topic_fn::Function,
     make_post_fn::Function
 ) where {S <: AbstractString}
@@ -95,14 +95,12 @@ end
 
 Run Discourse query and return result as a JSON3 object.
 """
-function discourse_run_query(endpoint::AbstractString, params::Dict{Symbol, S}) where {
-    S <: AbstractString
-}
-    sanitized_kv = Dict(HTTP.escapeuri(k) => HTTP.escapeuri(v) for (k,v) in params)
-    params_str = join(["$k=$v" for (k,v) in sanitized_kv], "&")
+function discourse_run_query(endpoint::AbstractString, params::Dict{Symbol,S}) where {S <: AbstractString}
+    sanitized_kv = Dict(HTTP.escapeuri(k) => HTTP.escapeuri(v) for (k, v) in params)
+    params_str = join(["$k=$v" for (k, v) in sanitized_kv], "&")
     response = HTTP.get(
         "$DISCOURSE_DOMAIN/$endpoint?$params_str",
-        headers = ["Accept" => "application/json"])
+        headers=["Accept" => "application/json"])
     return JSON3.read(response.body)
 end
 

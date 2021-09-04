@@ -9,6 +9,5 @@
         "editor.rulers": [
             92
         ],
-    },
-    "julia.format.kwarg": "single"
+    }
 }
