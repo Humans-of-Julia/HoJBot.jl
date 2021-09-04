@@ -5,11 +5,10 @@ using HoJBot: mod_make_regex, mod_check_message
 HoJBot.mod_init()
 
 @testset "mod" begin
-
     function test_matches(regex, strs, expected)
         for i in 1:length(strs)
             @test (match(regex, strs[i]) !== nothing) == expected[i]
-        end         
+        end
     end
 
     # regular word
@@ -31,5 +30,4 @@ HoJBot.mod_init()
     @test isempty(mod_check_message("this is ||shit||")) == true
     @test isempty(mod_check_message("this is damn ||shit||")) == false
     @test isempty(mod_check_message("this is ok ||shit")) == true
-
 end

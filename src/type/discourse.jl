@@ -24,6 +24,7 @@ end
 
 function Base.show(io::IO, d::DiscourseData)
     print(io, "DiscourseData[index=", d.index, ", posts=", length(d.posts), "]")
+    return nothing
 end
 
 """

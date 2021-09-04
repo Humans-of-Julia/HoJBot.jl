@@ -3,21 +3,48 @@ using Dates
 using Pretend
 using DataFrames
 
-using Discord:
-    Client, DiscordChannel, Message, User
+using Discord: Client, DiscordChannel, Message, User
 
 using HoJBot:
-    IgHolding, IgPortfolio, IgUserError, PrettyView, SimpleView,
-    current_date, discord_channel, discord_reply, discord_upload_file,
-    recent_date_range, retrieve, retrieve_users, upload_file,
-    ig_affirm_non_player, ig_affirm_player,
-    ig_buy, ig_cash_entry, ig_chart, ig_count_shares, ig_execute,
-    ig_file_path, ig_real_time_price, ig_grouped_holdings, ig_hey,
-    ig_historical_prices, ig_holdings_data_frame, ig_is_player,
-    ig_load_all_portfolios, ig_load_portfolio, ig_mark_to_market!,
-    ig_mark_to_market_portfolio, ig_ranking_table,
-    ig_reformat_view!, ig_remove_game, ig_save_portfolio,
-    ig_sell, ig_start_new_game, ig_value_all_portfolios, ig_view_table
+    IgHolding,
+    IgPortfolio,
+    IgUserError,
+    PrettyView,
+    SimpleView,
+    current_date,
+    discord_channel,
+    discord_reply,
+    discord_upload_file,
+    recent_date_range,
+    retrieve,
+    retrieve_users,
+    upload_file,
+    ig_affirm_non_player,
+    ig_affirm_player,
+    ig_buy,
+    ig_cash_entry,
+    ig_chart,
+    ig_count_shares,
+    ig_execute,
+    ig_file_path,
+    ig_real_time_price,
+    ig_grouped_holdings,
+    ig_hey,
+    ig_historical_prices,
+    ig_holdings_data_frame,
+    ig_is_player,
+    ig_load_all_portfolios,
+    ig_load_portfolio,
+    ig_mark_to_market!,
+    ig_mark_to_market_portfolio,
+    ig_ranking_table,
+    ig_reformat_view!,
+    ig_remove_game,
+    ig_save_portfolio,
+    ig_sell,
+    ig_start_new_game,
+    ig_value_all_portfolios,
+    ig_view_table
 
 Pretend.activate()
 
@@ -50,8 +77,12 @@ end
 mock_ig_get_quote_100(symbol::AbstractString) = 100.0
 mock_currrent_date() = Date(2021, 1, 11)
 mock_reply(c::Client, m::Message, s::AbstractString) = nothing
-mock_upload_file(c::Client, ch::DiscordChannel, filename::AbstractString; kwargs...) = nothing
-mock_channel(c::Client, id::UInt64) = DiscordChannel(; id = 0x00, type = 0x00)
+function mock_upload_file(
+    c::Client, ch::DiscordChannel, filename::AbstractString; kwargs...
+)
+    return nothing
+end
+mock_channel(c::Client, id::UInt64) = DiscordChannel(; id=0x00, type=0x00)
 
 function mock_retrieve_users(c::Client, ids::Vector{UInt64})
     return Dict(id => User(; id=id, username="$id") for id in ids)
@@ -154,7 +185,8 @@ mocked_client() = Client("hey")
         # convert to holdings data frame
         df = @test_nowarn ig_holdings_data_frame(pf)
         @test df isa AbstractDataFrame
-        @test sort(propertynames(df)) == sort([:symbol, :shares, :purchase_price, :purchase_date])
+        @test sort(propertynames(df)) ==
+              sort([:symbol, :shares, :purchase_price, :purchase_date])
 
         # grouped with average pricing
         gdf = ig_grouped_holdings(df)
@@ -209,8 +241,8 @@ mocked_client() = Client("hey")
 
     test_ig_cases("Executors") do
         c = Client("test")
-        m = Message(; id = 0x00, channel_id = 0x00)
-        u = User(; id = USER_ID3, username = USER_NAME)
+        m = Message(; id=0x00, channel_id=0x00)
+        u = User(; id=USER_ID3, username=USER_NAME)
         apply(
             discord_channel => mock_channel,
             discord_reply => mock_reply,
@@ -248,7 +280,7 @@ mocked_client() = Client("hey")
     end
 
     @testset "Charting" begin
-        dates = collect(Date(2021, 1, 1):Day(1):Date(2021,12,31))
+        dates = collect(Date(2021, 1, 1):Day(1):Date(2021, 12, 31))
         values = collect(1:365)
         @test_nowarn ig_chart("AAPL", dates, values)
     end

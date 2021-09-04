@@ -8,11 +8,22 @@ function commander(c::Client, m::Message, ::Val{:ig})
     @debug "parse result" command args
 
     if length(args) == 0 ||
-            args[1] ∉ ["start-game", "abandon-game", "quote", "chart",
-                "buy", "sell", "perf", "rank", "view", "gl", "hist",
-                "abandon-game-really"]
+       args[1] ∉ [
+        "start-game",
+        "abandon-game",
+        "quote",
+        "chart",
+        "buy",
+        "sell",
+        "perf",
+        "rank",
+        "view",
+        "gl",
+        "hist",
+        "abandon-game-really",
+    ]
         help_commander(c, m, :ig)
-        return
+        return nothing
     end
 
     user = @discord retrieve(c, User, m.author.id)
@@ -22,8 +33,14 @@ function commander(c::Client, m::Message, ::Val{:ig})
         if ex isa IgUserError
             discord_reply(c, m, ig_hey(user.username, ex.message))
         else
-            discord_reply(c, m, ig_hey(user.username,
-                "sorry, looks like you've hit a bug. Please report the problem."))
+            discord_reply(
+                c,
+                m,
+                ig_hey(
+                    user.username,
+                    "sorry, looks like you've hit a bug. Please report the problem.",
+                ),
+            )
             @error "Internal error" ex
             Base.showerror(stdout, ex, catch_backtrace())
         end
@@ -31,7 +48,10 @@ function commander(c::Client, m::Message, ::Val{:ig})
 end
 
 function help_commander(c::Client, m::Message, ::Val{:ig})
-    discord_reply(c, m, """
+    return discord_reply(
+        c,
+        m,
+        """
         Play the investment game (ig). US market only for now.
         ```
         ig start-game
@@ -42,7 +62,7 @@ function help_commander(c::Client, m::Message, ::Val{:ig})
         ig quote <symbol>            - get current price quote
         ig chart <symbol> [period]   - historical price chart
             Period is optional. Examples are: 200d, 36m, or 10y
-              for 200 days, 36 months, or 10 years respectively.
+            for 200 days, 36 months, or 10 years respectively.
         ```
         Manage portfolio:
         ```
@@ -57,7 +77,8 @@ function help_commander(c::Client, m::Message, ::Val{:ig})
         ```
         ig rank [n]            - display top <n> portfolios, defaults to 5.
         ```
-        """)
+        """,
+    )
 end
 
 """
@@ -98,70 +119,107 @@ function ig_execute end
 function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("start-game")}, args)
     ig_affirm_non_player(user.id)
     pf = ig_start_new_game(user.id)
-    discord_reply(c, m, ig_hey(user.username, "you have \$" * format_amount(pf.cash) *
-        " in your shiny new portfolio now! Good luck!"))
+    discord_reply(
+        c,
+        m,
+        ig_hey(
+            user.username,
+            "you have \$" *
+            format_amount(pf.cash) *
+            " in your shiny new portfolio now! Good luck!",
+        ),
+    )
     return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("abandon-game")}, args)
     ig_affirm_player(user.id)
-    discord_reply(c, m, ig_hey(user.username,
-        "do you REALLY want to abandon the game and wipe out all of your data? " *
-        "If so, type `ig abandon-game-really`."))
+    discord_reply(
+        c,
+        m,
+        ig_hey(
+            user.username,
+            "do you REALLY want to abandon the game and wipe out all of your data? " *
+            "If so, type `ig abandon-game-really`.",
+        ),
+    )
     return nothing
 end
 
-function ig_execute(c::Client, m::Message, user::User, ::Val{Symbol("abandon-game-really")}, args)
+function ig_execute(
+    c::Client, m::Message, user::User, ::Val{Symbol("abandon-game-really")}, args
+)
     ig_affirm_player(user.id)
     ig_remove_game(user.id)
-    discord_reply(c, m, ig_hey(user.username,
-        "your investment game is now over. Play again soon!"))
+    discord_reply(
+        c, m, ig_hey(user.username, "your investment game is now over. Play again soon!")
+    )
     return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:buy}, args)
     ig_affirm_player(user.id)
-    length(args) == 2 ||
-        throw(IgUserError("Invalid command. Try `ig buy 100 aapl` to buy 100 shares of Apple Inc."))
+    length(args) == 2 || throw(
+        IgUserError(
+            "Invalid command. Try `ig buy 100 aapl` to buy 100 shares of Apple Inc."
+        ),
+    )
 
     symbol = strip(uppercase(args[2]))
     shares = tryparse(Int, args[1])
-    shares !== nothing || throw(IgUserError("please enter number of shares as a number: `$shares`"))
+    shares !== nothing ||
+        throw(IgUserError("please enter number of shares as a number: `$shares`"))
 
     purchase_price = ig_buy(user.id, symbol, shares)
-    discord_reply(c, m, ig_hey(user.username, "you have bought $shares shares of $symbol at \$" *
-        format_amount(purchase_price)))
+    discord_reply(
+        c,
+        m,
+        ig_hey(
+            user.username,
+            "you have bought $shares shares of $symbol at \$" *
+            format_amount(purchase_price),
+        ),
+    )
     return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:sell}, args)
     ig_affirm_player(user.id)
-    length(args) == 2 ||
-        throw(IgUserError("Invalid command. Try `ig sell 100 aapl` to sell 100 shares of Apple Inc."))
+    length(args) == 2 || throw(
+        IgUserError(
+            "Invalid command. Try `ig sell 100 aapl` to sell 100 shares of Apple Inc."
+        ),
+    )
 
     symbol = strip(uppercase(args[2]))
     shares = tryparse(Int, args[1])
-    shares !== nothing || throw(IgUserError("please enter number of shares as a number: `$shares`"))
+    shares !== nothing ||
+        throw(IgUserError("please enter number of shares as a number: `$shares`"))
 
     current_price = ig_sell(user.id, symbol, shares)
-    discord_reply(c, m, ig_hey(user.username, "you have sold $shares shares of $symbol at \$" *
-        format_amount(current_price)))
+    discord_reply(
+        c,
+        m,
+        ig_hey(
+            user.username,
+            "you have sold $shares shares of $symbol at \$" * format_amount(current_price),
+        ),
+    )
     return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:perf}, args)
     ig_affirm_player(user.id)
     df = ig_perf(user.id)
-    table = pretty_table(String, df; header = names(df))
-    discord_reply(
-        c, m,
-        ig_hey(user.username, """your stocks' performance today:
-            ```
-            $table
-            ```
-            """
-        )
-    )
+    table = pretty_table(String, df; header=names(df))
+    discord_reply(c, m, ig_hey(
+        user.username,
+        """your stocks' performance today:
+        ```
+        $table
+        ```
+        """,
+    ))
     return nothing
 end
 
@@ -171,19 +229,19 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:gl}, args)
     page_size = 25  # approximate table size before exceeding Discord 2,000 char limit
     for (i, subdf) in enumerate(partition_table(df, page_size))
         if i == 1
-    discord_reply(
-        c, m,
-                ig_hey(user.username, "here are the gains/losses for your stocks:")
+            discord_reply(
+                c, m, ig_hey(user.username, "here are the gains/losses for your stocks:")
             )
         end
-        table = pretty_table(String, subdf; header = names(subdf))
+        table = pretty_table(String, subdf; header=names(subdf))
         discord_reply(
-            c, m,
+            c,
+            m,
             """
             ```
             $table
             ```
-            """
+            """,
         )
     end
     return nothing
@@ -201,16 +259,15 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:hist}, args)
 
     df = ig_hist(user.id, symbol)
     if nrow(df) > 0
-        table = pretty_table(String, df; header = names(df))
-        discord_reply(
-            c, m,
-            ig_hey(user.username, """here is the purchase history$clause:
-                ```
-                $table
-                ```
-                """
-            )
-        )
+        table = pretty_table(String, df; header=names(df))
+        discord_reply(c, m, ig_hey(
+            user.username,
+            """here is the purchase history$clause:
+            ```
+            $table
+            ```
+            """,
+        ))
     else
         discord_reply(c, m, ig_hey(user.username, "no purchase history was found."))
     end
@@ -225,12 +282,12 @@ function ig_perf(user_id::UInt64)
     prices_today = fetch.(@async(ig_get_quote(s)) for s in symbols)
     prices_change = prices_today .- prices_yesterday
     prices_change_pct = prices_change ./ prices_yesterday * 100
-    df = DataFrame(
-        symbol = symbols,
-        px_eod = prices_yesterday,
-        px_now = prices_today,
-        chg = round.(prices_change; digits = 2),
-        pct_chg = round.(prices_change_pct; digits = 1),
+    df = DataFrame(;
+        symbol=symbols,
+        px_eod=prices_yesterday,
+        px_now=prices_today,
+        chg=round.(prices_change; digits=2),
+        pct_chg=round.(prices_change_pct; digits=1),
     )
     rename!(df, "pct_chg" => "% chg")
     sort!(df, :symbol)
@@ -244,8 +301,8 @@ function ig_gain_loss(user_id::UInt64)
     rename!(df, "purchase_price" => "px_buy")
 
     df.px_now = fetch.(@async(ig_get_quote(s)) for s in df.symbol)
-    df.chg = round.(df.px_now .- df.px_buy; digits = 2)
-    df.pct_chg = round.(df.chg ./ df.px_buy * 100; digits = 1)
+    df.chg = round.(df.px_now .- df.px_buy; digits=2)
+    df.pct_chg = round.(df.chg ./ df.px_buy * 100; digits=1)
     rename!(df, "pct_chg" => "% chg")
 
     df.shares = round.(Int, df.shares)
@@ -280,18 +337,16 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
     table = ig_view_table(view, df)
     total_str = format_amount(round(Int, sum(df.amount)))
 
-    discord_reply(
-        c, m,
-        ig_hey(user.username,
-            """
-            here is your portfolio:
-            ```
-            $table
-            ```
-            Total portfolio Value: $total_str
-            """
-        )
-    )
+    discord_reply(c, m, ig_hey(
+        user.username,
+        """
+        here is your portfolio:
+        ```
+        $table
+        ```
+        Total portfolio Value: $total_str
+        """,
+    ))
     return nothing
 end
 
@@ -303,18 +358,26 @@ function ig_reformat_view!(df::AbstractDataFrame)
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:quote}, args)
-    length(args) == 1 ||
-        throw(IgUserError("Invalid command. Try `ig quote aapl` to fetch the current price of Apple Inc."))
+    length(args) == 1 || throw(
+        IgUserError(
+            "Invalid command. Try `ig quote aapl` to fetch the current price of Apple Inc.",
+        ),
+    )
 
     symbol = strip(uppercase(args[1]))
     price = ig_real_time_price(symbol)
-    discord_reply(c, m, ig_hey(user.username, "the current price of $symbol is " * format_amount(price)))
+    discord_reply(
+        c,
+        m,
+        ig_hey(user.username, "the current price of $symbol is " * format_amount(price)),
+    )
     return nothing
 end
 
 function ig_execute(c::Client, m::Message, user::User, ::Val{:chart}, args)
-    1 <= length(args) <= 2 ||
-        throw(IgUserError("Invalid command. Try `ig chart aapl` to see a chart for Apple Inc."))
+    1 <= length(args) <= 2 || throw(
+        IgUserError("Invalid command. Try `ig chart aapl` to see a chart for Apple Inc."),
+    )
 
     ch = discord_channel(c, m.channel_id)
     symbol = strip(uppercase(args[1]))
@@ -322,10 +385,17 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:chart}, args)
     from_date, to_date = recent_date_range(lookback)
     df = ig_historical_prices(symbol, from_date, to_date)
     filename = ig_chart(symbol, df.Date, df."Adj Close")
-    discord_upload_file(c, ch, filename;
-        content = ig_hey(user.username, "here is the chart for $symbol for the past $lookback. " *
+    discord_upload_file(
+        c,
+        ch,
+        filename;
+        content=ig_hey(
+            user.username,
+            "here is the chart for $symbol for the past $lookback. " *
             "To plot a chart with different time horizon, " *
-            "try something like `ig chart $symbol 90d` or `ig chart $symbol 10y`."))
+            "try something like `ig chart $symbol 90d` or `ig chart $symbol 10y`.",
+        ),
+    )
     return nothing
 end
 
@@ -334,22 +404,24 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:rank}, args)
         throw(IgUserError("Invalid command. Try `ig rank` or `ig rank 10`"))
 
     n = length(args) == 0 ? 5 : tryparse(Int, args[1])
-    n !== nothing || throw(IgUserError("invalid rank argument `$(args[1])`. " *
-        "Try `ig rank` or `ig rank 10`"))
+    n !== nothing || throw(
+        IgUserError(
+            "invalid rank argument `$(args[1])`. " * "Try `ig rank` or `ig rank 10`"
+        ),
+    )
 
     rt = ig_ranking_table(c)
     rt = rt[1:min(n, nrow(rt)), :]  # get top N results
     rt_str = ig_view_table(PrettyView(), rt)
 
-    discord_reply(
-        c, m,
-        ig_hey(user.username, """here's the current ranking:
-            ```
-            $rt_str
-            ```
-            """
-        )
-    )
+    discord_reply(c, m, ig_hey(
+        user.username,
+        """here's the current ranking:
+        ```
+        $rt_str
+        ```
+        """,
+    ))
     return nothing
 end
 
@@ -359,22 +431,24 @@ function ig_ranking_table(c::Client)
         users_dict = retrieve_users(c, [v.id for v in valuations])
         @debug "ig_ranking_table" valuations
         @debug "ig_ranking_table" users_dict
-        df = DataFrame(
-            rank = 1:length(valuations),
-            player = [users_dict[v.id].username for v in valuations],
-            portfolio_value = [v.total for v in valuations],
+        df = DataFrame(;
+            rank=1:length(valuations),
+            player=[users_dict[v.id].username for v in valuations],
+            portfolio_value=[v.total for v in valuations],
         )
         return df
     else
-        return DataFrame(player = String[], portfolio_value = Float64[])
+        return DataFrame(; player=String[], portfolio_value=Float64[])
     end
 end
 
 @mockable function retrieve_users(c::Client, ids::Vector{UInt64})
     futures = retrieve.(Ref(c), User, ids)
     responses = fetch.(futures)
-    unknown = User(; id = UInt64(0), username = "Unknown")
-    return Dict(k => res.val === nothing ? unknown : res.val for (k, res) in zip(ids, responses))
+    unknown = User(; id=UInt64(0), username="Unknown")
+    return Dict(
+        k => res.val === nothing ? unknown : res.val for (k, res) in zip(ids, responses)
+    )
 end
 
 function ig_value_all_portfolios()
@@ -388,14 +462,14 @@ function ig_value_all_portfolios()
         total = mv + cash
         push!(valuations, (; id, mv, cash, total))
     end
-    sort!(valuations; lt = (x,y) -> x.total < y.total, rev = true)
+    sort!(valuations; lt=(x, y) -> x.total < y.total, rev=true)
     # @info "ig_value_all_portfolios result" valuations
     return valuations
 end
 
 "Format money amount"
-format_amount(x::Real) = format(x, commas = true, precision = 2)
-format_amount(x::Integer) = format(x, commas = true)
+format_amount(x::Real) = format(x; commas=true, precision=2)
+format_amount(x::Integer) = format(x; commas=true)
 
 "Pretty table formatters"
 decimal_formatter(v, i, j) = v isa Real ? format_amount(v) : v
@@ -431,16 +505,19 @@ ig_remove_game(user_id::UInt64) = rm(ig_file_path(user_id))
 
 "Affirms the user has a game or throw an exception."
 function ig_affirm_player(user_id::UInt64)
-    ig_is_player(user_id) || throw(IgUserError(
-        "you don't have a game yet. Type `ig start-game` to start a new game."))
+    ig_is_player(user_id) || throw(
+        IgUserError("you don't have a game yet. Type `ig start-game` to start a new game."),
+    )
     return nothing
 end
 
 "Affirms the user does not have game or throw an exception."
 function ig_affirm_non_player(user_id::UInt64)
-    !ig_is_player(user_id) || throw(IgUserError(
-        "you already have a game running. Type `ig view` to see your current portfolio."
-    ))
+    !ig_is_player(user_id) || throw(
+        IgUserError(
+            "you already have a game running. Type `ig view` to see your current portfolio.",
+        ),
+    )
     return nothing
 end
 
@@ -477,14 +554,16 @@ function ig_load_all_portfolios()
     dir = ig_data_directory()
     files = readdir(dir)
     user_ids = ig_user_id_from_path.(files)
-    return Dict(user_id => ig_load_portfolio(joinpath(dir, file))
-        for (user_id, file) in zip(user_ids, files))
+    return Dict(
+        user_id => ig_load_portfolio(joinpath(dir, file)) for
+        (user_id, file) in zip(user_ids, files)
+    )
 end
 
 "Fetch quote of a stock, but possibly with a time delay."
 function ig_get_quote(symbol::AbstractString)
     return get!(QUOTE_CACHE, symbol) do
-        ig_real_time_price(symbol)
+        return ig_real_time_price(symbol)
     end
 end
 
@@ -493,7 +572,7 @@ function ig_buy(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_real_time_price(symbol)
+    current_price::Real=ig_real_time_price(symbol),
 )
     @debug "Buying stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -504,9 +583,13 @@ function ig_buy(
         ig_save_portfolio(user_id, pf)
         return current_price
     end
-    throw(IgUserError("you don't have enough cash. " *
-        "Buying $shares shares of $symbol will cost you $(format_amount(cost)) " *
-        "but you only have $(format_amount(pf.cash))"))
+    return throw(
+        IgUserError(
+            "you don't have enough cash. " *
+            "Buying $shares shares of $symbol will cost you $(format_amount(cost)) " *
+            "but you only have $(format_amount(pf.cash))",
+        ),
+    )
 end
 
 "Sell stock for a specific user. Returns executed price."
@@ -514,7 +597,7 @@ function ig_sell(
     user_id::UInt64,
     symbol::AbstractString,
     shares::Real,
-    current_price::Real = ig_real_time_price(symbol)
+    current_price::Real=ig_real_time_price(symbol),
 )
     @debug "Selling stock" user_id symbol shares
     pf = ig_load_portfolio(user_id)
@@ -524,14 +607,19 @@ function ig_sell(
 end
 
 "Sell stock based upon FIFO accounting scheme. Returns the resulting `IgPortfolio` object."
-function ig_sell_fifo(pf::IgPortfolio, symbol::AbstractString, shares::Real, current_price::Real)
-
+function ig_sell_fifo(
+    pf::IgPortfolio, symbol::AbstractString, shares::Real, current_price::Real
+)
     existing_shares = ig_count_shares(pf, symbol)
     if existing_shares == 0
         throw(IgUserError("you do not have $symbol in your portfolio"))
     elseif shares > existing_shares
         existing_shares_str = format_amount(round(Int, existing_shares))
-        throw(IgUserError("you cannot sell more than what you own ($existing_shares_str shares)"))
+        throw(
+            IgUserError(
+                "you cannot sell more than what you own ($existing_shares_str shares)"
+            ),
+        )
     end
 
     proceeds = shares * current_price
@@ -547,7 +635,9 @@ function ig_sell_fifo(pf::IgPortfolio, symbol::AbstractString, shares::Real, cur
             push!(holdings, h)
         else
             if h.shares > remaining  # relief lot partially
-                revised_lot = IgHolding(symbol, h.shares - remaining, h.date, h.purchase_price)
+                revised_lot = IgHolding(
+                    symbol, h.shares - remaining, h.date, h.purchase_price
+                )
                 push!(holdings, revised_lot)
                 remaining = 0
             else # relief this lot completely and continue
@@ -567,11 +657,11 @@ Note that:
 See also: `ig_grouped_holdings`(@ref)
 """
 function ig_holdings_data_frame(pf::IgPortfolio)
-    return DataFrame(
-        symbol = [h.symbol for h in pf.holdings],
-        shares = [h.shares for h in pf.holdings],
-        purchase_price = [h.purchase_price for h in pf.holdings],
-        purchase_date = [h.date for h in pf.holdings],
+    return DataFrame(;
+        symbol=[h.symbol for h in pf.holdings],
+        shares=[h.shares for h in pf.holdings],
+        purchase_price=[h.purchase_price for h in pf.holdings],
+        purchase_date=[h.date for h in pf.holdings],
     )
 end
 
@@ -581,7 +671,7 @@ function ig_grouped_holdings(df::AbstractDataFrame)
         shares = sum(sdf.shares)
         weights = sdf.shares / shares
         purchase_price = sum(weights .* sdf.purchase_price)
-        (; shares, purchase_price)
+        return (; shares, purchase_price)
     end
     return sort!(df, :symbol)
 end
@@ -602,8 +692,13 @@ end
 
 "Return the portoflio cash as named tuple that can be appended to the portfolio data frame."
 function ig_cash_entry(pf::IgPortfolio)
-    return (symbol = "CASH:USD", shares = pf.cash,
-        purchase_price = 1.0, current_price = 1.0, market_value = pf.cash)
+    return (
+        symbol="CASH:USD",
+        shares=pf.cash,
+        purchase_price=1.0,
+        current_price=1.0,
+        market_value=pf.cash,
+    )
 end
 
 "Add columns with current price and market value"
@@ -615,8 +710,7 @@ end
 
 "Format data frame using pretty table"
 function ig_view_table(::PrettyView, df::AbstractDataFrame)
-    return pretty_table(String, df;
-        formatters = integer_formatter, header = names(df))
+    return pretty_table(String, df; formatters=integer_formatter, header=names(df))
 end
 
 "Return portfolio view as string in a simple format"
@@ -625,13 +719,20 @@ function ig_view_table(::SimpleView, df::AbstractDataFrame)
     # @show "ig_view_table" df
     for (i, r) in enumerate(eachrow(df))
         if !startswith(r.symbol, "CASH:")
-            println(io,
-                i, ". ", r.symbol, ": ",
-                round(Int, r.shares), " x \$", format_amount(r.price),
-                " = \$", format_amount(round(Int, r.amount)))
+            println(
+                io,
+                i,
+                ". ",
+                r.symbol,
+                ": ",
+                round(Int, r.shares),
+                " x \$",
+                format_amount(r.price),
+                " = \$",
+                format_amount(round(Int, r.amount)),
+            )
         else
-            println(io,
-                i, ". ", r.symbol, " = ", format_amount(round(Int, r.amount)))
+            println(io, i, ". ", r.symbol, " = ", format_amount(round(Int, r.amount)))
         end
     end
 
@@ -662,16 +763,23 @@ function ig_historical_prices(symbol::AbstractString, from_date::Date, to_date::
     from_sec = seconds_since_1970(from_date)
     to_sec = seconds_since_1970(to_date + Day(1))  # apparently, Yahoo is exclusive on this end
     symbol = HTTP.escapeuri(symbol)
-    url = "https://query1.finance.yahoo.com/v7/finance/download/$symbol?" *
+    url =
+        "https://query1.finance.yahoo.com/v7/finance/download/$symbol?" *
         "period1=$from_sec&period2=$to_sec&interval=1d&events=history&includeAdjustedClose=true"
     try
-        elapsed = @elapsed df = DataFrame(CSV.File(Downloads.download(url); missingstring="null"))
+        elapsed = @elapsed df = DataFrame(
+            CSV.File(Downloads.download(url); missingstring="null")
+        )
         dropmissing!(df)
         @info "$(now())\tig_historical_prices\t$symbol\t$from_date\t$to_date\t$elapsed"
         return df
     catch ex
         if ex isa Downloads.RequestError && ex.response.status == 404
-            throw(IgUserError("there is no historical prices for $symbol. Is it a valid stock symbol?"))
+            throw(
+                IgUserError(
+                    "there is no historical prices for $symbol. Is it a valid stock symbol?"
+                ),
+            )
         else
             rethrow()
         end
@@ -702,24 +810,28 @@ end
 function ig_chart(symbol::AbstractString, dates::Vector{Date}, values::Vector{<:Real})
     from_date, to_date = extrema(dates)
     last_price_str = format_amount(last(values))
-    c = crplot(dates, values; xticks = 5, yticks = 10, title="$symbol Historical Prices ($from_date to $to_date)\nLast price: $last_price_str")
+    c = crplot(
+        dates,
+        values;
+        xticks=5,
+        yticks=10,
+        title="$symbol Historical Prices ($from_date to $to_date)\nLast price: $last_price_str",
+    )
     filename = tempname() * ".png"
     CairoPlot.write_to_png(c, filename)
     return filename
 end
 
-
-
 "Find lots for a specific stock in the portfolio. Sort by purchase date."
 function ig_find_lots(pf::IgPortfolio, symbol::AbstractString)
     lots = IgHolding[x for x in pf.holdings if x.symbol == symbol]
-    return sort(lots, lt = (x,y) -> x.date < y.date)
+    return sort(lots; lt=(x, y) -> x.date < y.date)
 end
 
 "Return total number of shares for a specific stock in the portfolio."
 function ig_count_shares(pf::IgPortfolio, symbol::AbstractString)
     lots = ig_find_lots(pf, symbol)
-    return length(lots) > 0 ? round(sum(lot.shares for lot in lots); digits = 0) : 0
+    return length(lots) > 0 ? round(sum(lot.shares for lot in lots); digits=0) : 0
     # note that we store shares as Float64 but uses it as Int (for now)
 end
 

@@ -1,7 +1,7 @@
 const FILTERED_ACTIVE_CMDS = keys((filter(check -> last(check) == true, ACTIVE_COMMANDS)))
 
 function commander(c::Client, m::Message, ::Val{:source})
-    startswith(m.content, COMMAND_PREFIX * "src") || return
+    startswith(m.content, COMMAND_PREFIX * "src") || return nothing
 
     regex = Regex(COMMAND_PREFIX * raw"src( help| [a-zA-Z]*)? *(.*)$")
 
@@ -22,13 +22,13 @@ function commander(c::Client, m::Message, ::Val{:source})
 end
 
 function help_commander(c::Client, m::Message, ::Val{:source})
-    list_commands = join(sort([
-        string("src", " ", cmd, "\n") for cmd in FILTERED_ACTIVE_CMDS
-    ]))
+    list_commands = join(
+        sort([string("src", " ", cmd, "\n") for cmd in FILTERED_ACTIVE_CMDS])
+    )
 
-    reply(
-        c, 
-        m, 
+    return reply(
+        c,
+        m,
         """
         Returns the source file of the command.
         Usage: `src <command>`
@@ -37,6 +37,6 @@ function help_commander(c::Client, m::Message, ::Val{:source})
         $(list_commands)
         ```
         `src` or `src help` returns help
-        """
+        """,
     )
 end

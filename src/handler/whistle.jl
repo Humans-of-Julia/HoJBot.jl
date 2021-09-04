@@ -48,7 +48,6 @@ Handle whistle blower reports. The complete flow is as follows:
 7. Log an audit event.
 """
 function handler(c::Client, e::MessageReactionAdd, ::Val{:whistle})
-
     if e.emoji.name === WHISTLE_EMOJI
         @info "MessageReactionAdd (whistle)" e.user_id e.channel_id e.message_id e.emoji
 
@@ -65,29 +64,34 @@ function handler(c::Client, e::MessageReactionAdd, ::Val{:whistle})
         if count >= WHISTLE_MIN_REPORTS_FOR_REMOVAL
             @info "Max reports reached" e.user_id e.channel_id e.message_id
             # delete the message
-            m = Message(; id = e.message_id, channel_id = e.channel_id)
+            m = Message(; id=e.message_id, channel_id=e.channel_id)
             @discord delete(c, m)
         else
             # remove the emoji to protect reporter's identity
-            m = Message(; id = e.message_id, channel_id = e.channel_id)
-            u = User(; id = e.user_id)
+            m = Message(; id=e.message_id, channel_id=e.channel_id)
+            u = User(; id=e.user_id)
             @discord delete(c, e.emoji, m, u)
         end
 
         # thank reporter
-        dm_channel = fetchval(create_dm(c; recipient_id = e.user_id))
-        uuid = string(uuid4())[end-11:end]
+        dm_channel = fetchval(create_dm(c; recipient_id=e.user_id))
+        uuid = string(uuid4())[(end - 11):end]
         reference = " (Reference ID: $uuid)"
-        @discord create(c, Message, dm_channel;
-            content = WHISTLE_BLOWER_THANK_YOU_MESSAGE * reference)
+        @discord create(
+            c, Message, dm_channel; content=WHISTLE_BLOWER_THANK_YOU_MESSAGE * reference
+        )
 
         # remember this report
         push!(prior_user_reports, e.message_id)
 
         # log an audit event
         user = @discord retrieve(c, User, e.user_id)
-        audit("whistle",
-            user.id, user.username, user.discriminator,
-            "message_id=$(e.message_id) uuid=$uuid count=$count")
+        audit(
+            "whistle",
+            user.id,
+            user.username,
+            user.discriminator,
+            "message_id=$(e.message_id) uuid=$uuid count=$count",
+        )
     end
 end

@@ -20,7 +20,7 @@ end
 function start_bot(;
     commands=ACTIVE_COMMANDS,
     handlers=HANDLERS_LIST,
-    run_duration = Minute(365 * 24 * 60),  # run for a very long time by default
+    run_duration=Minute(365 * 24 * 60),  # run for a very long time by default
 )
     @info "Starting bot... command prefix = $COMMAND_PREFIX"
     global client = Client(
@@ -35,6 +35,7 @@ function start_bot(;
     open(client)
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
+    return nothing
 end
 
 function init_handlers!(client::Client, handlers)
@@ -85,6 +86,7 @@ end
 function commander(c::Client, m::Message, service::Symbol)
     @info "commander requested" c m service
     commander(c, m, Val(service))
+    return nothing
 end
 help_commander(c::Client, m::Message, service::Symbol) = help_commander(c, m, Val(service))
 
@@ -96,7 +98,7 @@ function get_opt(username, discriminator)
 end
 
 function get_opt!(username, discriminator, service)
-    get!(get_opt(username, discriminator), string(service), false)
+    return get!(get_opt(username, discriminator), string(service), false)
 end
 
 function set_opt!(username, discriminator, service, value)
@@ -105,6 +107,7 @@ function set_opt!(username, discriminator, service, value)
     user = username * "_" * discriminator
     path = joinpath(pwd(), "data", "opt", user)
     write(ensurepath!(path), json(opt))
+    return nothing
 end
 
 function opt_in(c::Client, m::Message, service)

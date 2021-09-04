@@ -4,25 +4,21 @@ const MOD_REPORT_CHANNEL = Ref{DiscordChannel}()
 const MOD_BAD_WORDS = Set{BadWord}()
 const MOD_BAD_WORD_REGEXES = Dict{BadWord,Regex}()
 
-function handler(
-    c::Client,
-    e::Union{MessageCreate, MessageUpdate},
-    ::Val{:mod}
-)
+function handler(c::Client, e::Union{MessageCreate,MessageUpdate}, ::Val{:mod})
     if ismissing(e.message.content)
-        return # Possible e.g. only embed is updated by Discord (flipping discourse)
+        return nothing # Possible e.g. only embed is updated by Discord (flipping discourse)
     end
 
     if e.message.author.id == c.state.user.id
-        return # No need to check if the message came from the bot itself
+        return nothing # No need to check if the message came from the bot itself
     end
 
     mod_report_channel = mod_get_report_channel(c, e.message.guild_id)
     if mod_report_channel === nothing
-        return # config error; nothing we can do about...
+        return nothing # config error; nothing we can do about...
     end
     if e.message.channel_id == mod_report_channel.id
-        return # Do not moderate the mod channel itself
+        return nothing # Do not moderate the mod channel itself
     end
 
     mod_init() # lazy initialization
@@ -34,15 +30,22 @@ function handler(
         new_content = mod_censor_message(e.message.content, result)
         if new_content != e.message.content
             delete_message(c, e.message.channel_id, e.message.id)
-            censored_message = @discord create_message(c, e.message.channel_id;
-                content = "<@!$(user_id)> said: $new_content")
+            censored_message = @discord create_message(
+                c, e.message.channel_id; content="<@!$(user_id)> said: $new_content"
+            )
             report_message_id = censored_message.id
         end
         # Update the mod-report channel
-        report = mod_report(user_id, e.message.content, result,
-            report_message_id, e.message.channel_id, e.message.guild_id)
+        report = mod_report(
+            user_id,
+            e.message.content,
+            result,
+            report_message_id,
+            e.message.channel_id,
+            e.message.guild_id,
+        )
         if mod_report_channel !== nothing
-            create_message(c, mod_report_channel.id; content = report)
+            create_message(c, mod_report_channel.id; content=report)
         end
     end
     return nothing
@@ -65,7 +68,7 @@ function mod_get_report_channel(c::Client, guild_id::Integer)
 end
 
 "Initialize mod function e.g. read bad words list."
-function mod_init(; force = false)
+function mod_init(; force=false)
     if force
         empty!(MOD_BAD_WORDS)
     end
@@ -160,7 +163,7 @@ function mod_report(
     str = join([w.word for w in bad_words], ", ")
     badness = mod_badness(bad_words)
     return "$badness message from <@!$user_id> with `$str`: $(content)\n" *
-        "Ref: https://discord.com/channels/$guild_id/$channel_id/$message_id"
+           "Ref: https://discord.com/channels/$guild_id/$channel_id/$message_id"
 end
 
 """
@@ -190,10 +193,7 @@ Discord spoiler markers are ignored. Only `bad_words` are
 considered. See `mod_check_message`[@ref] about how to gather
 the list.
 """
-function mod_censor_message(
-    content::AbstractString,
-    bad_words::AbstractSet{BadWord}
-)
+function mod_censor_message(content::AbstractString, bad_words::AbstractSet{BadWord})
     original_content = content
 
     tokens = split(content, "||")

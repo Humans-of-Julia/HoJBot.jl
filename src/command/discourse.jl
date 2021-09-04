@@ -1,12 +1,12 @@
 function commander(c::Client, m::Message, ::Val{:discourse})
     @info "discourse_commander called"
-    startswith(m.content, COMMAND_PREFIX * "discourse") || return
+    startswith(m.content, COMMAND_PREFIX * "discourse") || return nothing
 
     regex = Regex(COMMAND_PREFIX * raw"discourse( .*)$")
     matches = match(regex, m.content)
     if matches === nothing
         help_commander(c, m, :discourse)
-        return
+        return nothing
     end
     arg = strip(matches.captures[1])
     if arg == "latest"
@@ -30,14 +30,18 @@ function commander(c::Client, m::Message, ::Val{:discourse})
 end
 
 function help_commander(c::Client, m::Message, ::Val{:discourse})
-    reply(c, m, """
+    return reply(
+        c,
+        m,
+        """
         Perform a search on Julia Discourse.
         ```
         discourse <query>
         discourse top
         discourse latest
         ```
-        """)
+        """,
+    )
 end
 
 """
@@ -61,13 +65,14 @@ function discourse_search(
     c::Client,
     m::Message,
     endpoint::AbstractString,
-    params::Dict{Symbol, S},
+    params::Dict{Symbol,S},
     topic_fn::Function,
-    make_post_fn::Function
-) where {S <: AbstractString}
+    make_post_fn::Function,
+) where {S<:AbstractString}
     data = discourse_execute_query(endpoint, params, topic_fn, make_post_fn)
     new_message = reply(c, m, data)
     discourse_save(new_message.id, data)
+    return nothing
 end
 
 """
@@ -82,10 +87,10 @@ Execute a query and return `DiscourseData` object.
 """
 function discourse_execute_query(
     endpoint::AbstractString,
-    params::Dict{Symbol, S},
+    params::Dict{Symbol,S},
     topic_fn::Function,
-    make_post_fn::Function
-) where {S <: AbstractString}
+    make_post_fn::Function,
+) where {S<:AbstractString}
     json = discourse_run_query(endpoint, params)
     return DiscourseData(topic_fn(json), make_post_fn)
 end
@@ -95,14 +100,14 @@ end
 
 Run Discourse query and return result as a JSON3 object.
 """
-function discourse_run_query(endpoint::AbstractString, params::Dict{Symbol, S}) where {
-    S <: AbstractString
-}
-    sanitized_kv = Dict(HTTP.escapeuri(k) => HTTP.escapeuri(v) for (k,v) in params)
-    params_str = join(["$k=$v" for (k,v) in sanitized_kv], "&")
+function discourse_run_query(
+    endpoint::AbstractString, params::Dict{Symbol,S}
+) where {S<:AbstractString}
+    sanitized_kv = Dict(HTTP.escapeuri(k) => HTTP.escapeuri(v) for (k, v) in params)
+    params_str = join(["$k=$v" for (k, v) in sanitized_kv], "&")
     response = HTTP.get(
-        "$DISCOURSE_DOMAIN/$endpoint?$params_str",
-        headers = ["Accept" => "application/json"])
+        "$DISCOURSE_DOMAIN/$endpoint?$params_str"; headers=["Accept" => "application/json"]
+    )
     return JSON3.read(response.body)
 end
 
@@ -110,6 +115,7 @@ function discourse_save(message_id::UInt64, r::DiscourseData)
     @info "Saving discourse search data for message_id=$message_id"
     path = discourse_file_path(message_id)
     write(ensurepath!(path), JSON3.write(r))
+    return nothing
 end
 
 function discourse_load(message_id::UInt64)
