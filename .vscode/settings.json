@@ -9,6 +9,9 @@
         "editor.rulers": [
             92
         ],
-        "editor.defaultFormatter": "singularitti.vscode-julia-formatter"
-    }
+        // Use Julia Formatter extension instead of the default formatter
+        // "editor.defaultFormatter": "singularitti.vscode-julia-formatter",
+    },
+    // Use your own JuliaFormatter image (much faster!)
+    //"juliaFormatter.sysimagePath": "/home/tomkwong/.julia/images/1.6.2/JuliaFormatter_image.so"
 }
