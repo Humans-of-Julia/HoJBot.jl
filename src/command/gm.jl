@@ -1,5 +1,5 @@
 function commander(c::Client, m::Message, ::Val{:game_master})
-    startswith(m.content, COMMAND_PREFIX * "gm") || return
+    startswith(m.content, COMMAND_PREFIX * "gm") || return nothing
 
     regex = Regex(COMMAND_PREFIX * raw"gm( help| in| out)? *(.*)$")
 
@@ -20,7 +20,10 @@ function commander(c::Client, m::Message, ::Val{:game_master})
 end
 
 function help_commander(c::Client, m::Message, ::Val{:game_master})
-    reply(c, m, """
+    return reply(
+        c,
+        m,
+        """
         How to play with the `gm` command:
         ```
         gm help
@@ -28,5 +31,6 @@ function help_commander(c::Client, m::Message, ::Val{:game_master})
         gm out
         ```
         The commands `in` and `out` are to opt-in and opt-out of the game. Playing data of an `out` player are kept until the end of the game. An `out` player can come `in` anytime to resume its participation!
-        """)
+        """,
+    )
 end

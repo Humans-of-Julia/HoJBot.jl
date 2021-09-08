@@ -20,9 +20,9 @@ using TimeZones
 using UUIDs
 using Pkg
 
-import HTTP
-import JSON3
-import StructTypes
+using HTTP: HTTP
+using JSON3: JSON3
+using StructTypes: StructTypes
 
 const COMMAND_PREFIX = get(ENV, "HOJBOT_COMMAND_PREFIX", ",")
 

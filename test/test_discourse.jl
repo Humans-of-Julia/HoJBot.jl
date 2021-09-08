@@ -1,12 +1,17 @@
 using HoJBot:
-    DiscourseData, DiscoursePost,
-    discourse_run_query, discourse_load, discourse_save,
-    current, message, next, previous
+    DiscourseData,
+    DiscoursePost,
+    discourse_run_query,
+    discourse_load,
+    discourse_save,
+    current,
+    message,
+    next,
+    previous
 
-import JSON3
+using JSON3: JSON3
 
 @testset "discourse" begin
-
     json = discourse_run_query("search.json", Dict(:q => "pluto"))
 
     let

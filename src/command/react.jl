@@ -1,6 +1,6 @@
 function commander(c::Client, m::Message, ::Val{:reaction})
     @info "reaction_commander called"
-    startswith(m.content, COMMAND_PREFIX * "react") || return
+    startswith(m.content, COMMAND_PREFIX * "react") || return nothing
 
     regex = Regex(COMMAND_PREFIX * raw"react( help| in| out)? *(.*)$")
 
@@ -21,7 +21,10 @@ function commander(c::Client, m::Message, ::Val{:reaction})
 end
 
 function help_commander(c::Client, m::Message, ::Val{:reaction})
-    reply(c, m, """
+    return reply(
+        c,
+        m,
+        """
         How to opt-in/out of the `reaction` bot:
         ```
         react help
@@ -29,5 +32,6 @@ function help_commander(c::Client, m::Message, ::Val{:reaction})
         react out
         ```
         The commands `in` and `out` are to opt-in and opt-out of the reaction bot.
-        """)
+        """,
+    )
 end

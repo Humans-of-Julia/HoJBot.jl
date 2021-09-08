@@ -4,7 +4,9 @@
     return @discord retrieve(c, DiscordChannel, channel_id)
 end
 
-@mockable function discord_upload_file(c::Client, channel::DiscordChannel, filename::AbstractString; kwargs...)
+@mockable function discord_upload_file(
+    c::Client, channel::DiscordChannel, filename::AbstractString; kwargs...
+)
     return @discord upload_file(c, channel, filename; kwargs...)
 end
 

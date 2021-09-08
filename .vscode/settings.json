@@ -1,0 +1,17 @@
+{
+    "[julia]": {
+        "editor.detectIndentation": false,
+        "editor.insertSpaces": true,
+        "editor.tabSize": 4,
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true,
+        "files.trimTrailingWhitespace": true,
+        "editor.rulers": [
+            92
+        ],
+        // Use Julia Formatter extension instead of the default formatter
+        // "editor.defaultFormatter": "singularitti.vscode-julia-formatter",
+    },
+    // Use your own JuliaFormatter image (much faster!)
+    //"juliaFormatter.sysimagePath": "/home/tomkwong/.julia/images/1.6.2/JuliaFormatter_image.so"
+}

@@ -2,33 +2,45 @@
 
 function parse_doc(doc::AbstractString)
     doc = replace(doc, r"\n\n\n+" => "\n\n")
-    capture_ranges = [m.offset:m.offset+ncodeunits(m.match)-1
-        for m in eachmatch.(r"(```.+?```)"s, doc)
+    capture_ranges = [
+        (m.offset):(m.offset + ncodeunits(m.match) - 1) for
+        m in eachmatch.(r"(```.+?```)"s, doc)
     ]
-    for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n",doc)
+    for m in eachmatch(r"(^|\n)(#+ |!!! )(.*)\n", doc)
         if all(rg -> m.offset ∉ rg, capture_ranges)
             if m.captures[2] == "# "
-                doc = replace(doc, m.match => m.captures[1] *
-                    "**" * m.captures[3] * "**\n" * "≡"^(length(m.captures[3])),
-                    count = 1
+                doc = replace(
+                    doc,
+                    m.match =>
+                        m.captures[1] *
+                        "**" *
+                        m.captures[3] *
+                        "**\n" *
+                        "≡"^(length(m.captures[3]));
+                    count=1,
                 )
             elseif m.captures[2] == "!!! "
-                doc = replace(doc, m.match => m.captures[1] *
-                    "__" * m.captures[3] * "__\n",
-                    count = 1
+                doc = replace(
+                    doc, m.match => m.captures[1] * "__" * m.captures[3] * "__\n"; count=1
                 )
             else
-                doc = replace(doc, m.match => m.captures[1] *
-                    "*" * m.captures[3] * "*\n" * "-"^(length(m.captures[3])),
-                    count = 1
+                doc = replace(
+                    doc,
+                    m.match =>
+                        m.captures[1] *
+                        "*" *
+                        m.captures[3] *
+                        "*\n" *
+                        "-"^(length(m.captures[3]));
+                    count=1,
                 )
             end
         end
     end
     doc = replace(doc, r"(```.+)\n" => "```julia\n")
     doc = replace(doc, "```\n\n" => "```\n")
-    for m in eachmatch(r"\[([^ ]*)\]\(@ref\)",doc)
-        doc = replace(doc, m.match => "`"*m.captures[1]*"`", count = 1)
+    for m in eachmatch(r"\[([^ ]*)\]\(@ref\)", doc)
+        doc = replace(doc, m.match => "`" * m.captures[1] * "`"; count=1)
     end
     return doc
 end
@@ -38,9 +50,12 @@ function commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "Message content" m.content m.author.username m.author.discriminator
     startswith(m.content, COMMAND_PREFIX * "j ") ||
         startswith(m.content, COMMAND_PREFIX * "j? ") ||
-        m.content == COMMAND_PREFIX * "j" || return
-    regex = Regex(COMMAND_PREFIX * 
-        raw"j(\?| help| doc| packages| package| stats| top| bottom)? *(.*)$")
+        m.content == COMMAND_PREFIX * "j" ||
+        return nothing
+    regex = Regex(
+        COMMAND_PREFIX *
+        raw"j(\?| help| doc| packages| package| stats| top| bottom)? *(.*)$",
+    )
     matches = match(regex, m.content)
     if matches === nothing || matches.captures[1] in (" help", nothing)
         help_commander(c, m, Val(:julia_doc))
@@ -60,7 +75,10 @@ end
 
 function help_commander(c::Client, m::Message, ::Val{:julia_doc})
     # @info "Sending help for message" m.id m.author
-    reply(c, m, """
+    reply(
+        c,
+        m,
+        """
         The `j` command shows the docstring of keywords, names in Base and names in other selected packages, as well as statistics on the names that have been queried. Only names with meaningful help information have been recorded from each package.
 
         To see which packages have been added, use `j packages`. If you would like a particular package to be added, just let us know.
@@ -83,7 +101,8 @@ function help_commander(c::Client, m::Message, ::Val{:julia_doc})
         * `j stats <name>` return how many times the docstring for `name` has been queried.
         * `j top [<number>]` return the top 10 names that have been queried (or top `number`, if given).
         * `j bottom [<number>]` return the bottom 10 names that have been queried (or bottom `number`, if given).
-        """)
+        """,
+    )
     return nothing
 end
 
@@ -93,16 +112,16 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
         name = strip(name)
         name = replace(name, r"\s{2,}" => " ")
         channel = @discord get_channel(c, m.channel_id)
-        all_names = load_names(joinpath(
-            @__DIR__, "..", "..", "data", "docs", "all_names.json")
+        all_names = load_names(
+            joinpath(@__DIR__, "..", "..", "data", "docs", "all_names.json")
         )
-        pkg_in_name, name = occursin('.', name) ? split(name, '.') |>
-            u -> (first(u), last(u)) : ("", name)
-        all_docs = load_docs(joinpath(
-            @__DIR__, "..", "..", "data", "docs", "all_docs.json")
+        pkg_in_name, name =
+            occursin('.', name) ? u -> (first(u), last(u))(split(name, '.')) : ("", name)
+        all_docs = load_docs(
+            joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
         )
         if name in keys(all_names)
-            doc_in_pkgs = Dict{String, String}()
+            doc_in_pkgs = Dict{String,String}()
             for pkg in keys(all_names[name])
                 if pkg_in_name in ("", pkg)
                     push!(doc_in_pkgs, pkg => all_docs[pkg][name][2])
@@ -110,15 +129,15 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
             end
 
             if length(doc_in_pkgs) > 0
-                for (k,v) in doc_in_pkgs
+                for (k, v) in doc_in_pkgs
                     if k in ("Base", "Keywords")
                         doc = v
                     else
                         doc = "*In Package* `$k`:\n" * v
                     end
                     doc = parse_doc(doc)
-                    docs = split_message(doc,
-                        extrastyles = [r"\n.*\n≡.+\n", r"\n.*\n-+\n", r"[^\s]+"]
+                    docs = split_message(
+                        doc; extrastyles=[r"\n.*\n≡.+\n", r"\n.*\n-+\n", r"[^\s]+"]
                     )
                     for doc_chunk in docs
                         # @info doc_chunk
@@ -126,9 +145,7 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
                     end
                 end
 
-                count = update_names_count(
-                    "namescount", name,
-                    m.channel_id, channel.name)
+                count = update_names_count("namescount", name, m.channel_id, channel.name)
                 reply(c, m, "*(Count number for `$name`: $count)*")
             else
                 reply(c, m, "No documentation for `$name` found in package `$pkg`")
@@ -143,8 +160,9 @@ function handle_julia_help_commander(c::Client, m::Message, name::AbstractString
     return nothing
 end
 
-function handle_doc_stats(c::Client, m::Message, captured1::AbstractString,
-        captured2::AbstractString)
+function handle_doc_stats(
+    c::Client, m::Message, captured1::AbstractString, captured2::AbstractString
+)
     # @info "handle_doc_stats called"
     captured2 = strip(captured2)
     captured2 = replace(captured2, r"\s{2,}" => " ")
@@ -153,15 +171,17 @@ function handle_doc_stats(c::Client, m::Message, captured1::AbstractString,
             if captured2 == ""
                 statsmgs = stats_namescount("namescount")
             else
-                statsmgs = stats_namescount("namescount", name=captured2)
+                statsmgs = stats_namescount("namescount"; name=captured2)
             end
         elseif captured1 in (" top", " bottom")
-            if captured2 != "" && all(isdigit,captured2)
-                statsmgs = stats_namescount("namescount", place=strip(captured1),
-                    number=max(1, parse(Int,captured2))
+            if captured2 != "" && all(isdigit, captured2)
+                statsmgs = stats_namescount(
+                    "namescount";
+                    place=strip(captured1),
+                    number=max(1, parse(Int, captured2)),
                 )
             else
-                statsmgs = stats_namescount("namescount", place=strip(captured1))
+                statsmgs = stats_namescount("namescount"; place=strip(captured1))
             end
         end
         reply(c, m, statsmgs)
@@ -176,14 +196,16 @@ function handle_julia_package_list(c::Client, m::Message)
     all_docs_filename = joinpath(@__DIR__, "..", "..", "data", "docs", "all_docs.json")
     if isfile(all_docs_filename)
         all_docs = load_docs(all_docs_filename)
-        msg = "Besides the **keywords** and **Base**, " *
+        msg =
+            "Besides the **keywords** and **Base**, " *
             "there are $(length(all_docs)-2) packages " *
             "available with recorded names:\n\n" *
-            join(sort(collect(keys(all_docs))), ", ") * "."
+            join(sort(collect(keys(all_docs))), ", ") *
+            "."
     else
         msg = "No packages available."
     end
-    reply(c, m, msg)
+    return reply(c, m, msg)
 end
 
 function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractString)
@@ -209,7 +231,8 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
             elseif length(pkg_list_exported) == 1
                 msg *= "**There is 1 exported name on record from package `$pkg`:**\n\n"
             else
-                msg *= "**There are $(length(pkg_list_exported)) exported names " *
+                msg *=
+                    "**There are $(length(pkg_list_exported)) exported names " *
                     "on record from package `$pkg`:**\n\n"
             end
             if length(pkg_list_exported) > 0
@@ -220,7 +243,8 @@ function handle_julia_names_in_package(c::Client, m::Message, pkg::AbstractStrin
             elseif length(pkg_list_nonexported) == 1
                 msg *= "**There is 1 nonexported name:**\n\n"
             else
-                msg *= "**There are $(length(pkg_list_nonexported)) " *
+                msg *=
+                    "**There are $(length(pkg_list_nonexported)) " *
                     "non-exported names:**\n\n"
             end
             if length(pkg_list_nonexported) > 1

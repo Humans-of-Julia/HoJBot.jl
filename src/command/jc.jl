@@ -3,22 +3,20 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
     args = split(command)
     @debug "parse result" command args
 
-    if length(args) == 0 ||
-        args[1] ∉ ["2021", "now", "today", "tomorrow", "day"] # next is not available yet
+    if length(args) == 0 || args[1] ∉ ["2021", "now", "today", "tomorrow", "day"] # next is not available yet
         help_commander(c, m, :julia_con)
-        return
+        return nothing
     end
 
     arg = (occursin(r"[0-9]+", args[1]) ? "jc" : "") * args[1]
-    jc_execute(c, m, Symbol(arg), args[2:end])
-
+    return jc_execute(c, m, Symbol(arg), args[2:end])
 end
 
 jc_execute(c, m, arg::Symbol, args) = jc_execute(c, m, Val(arg), args)
 
 function jc_execute(c, m, ::Val{:jc2021}, args)
     @info "2021 was required" m.content m.author.username m.author.discriminator
-    jc_juliacon2021(c, m)
+    return jc_juliacon2021(c, m)
 end
 
 function jc_execute(c, m, ::Val{:now}, args)
@@ -29,14 +27,14 @@ function jc_execute(c, m, ::Val{:now}, args)
     # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
     @info "now command" tz_arg current
 
-    if isempty(JuliaCon.get_running_talks(now = current))
+    if isempty(JuliaCon.get_running_talks(; now=current))
         not_now = "There is no JuliaCon program now."
         @info not_now
         today = " Try `jc today`"
         schedule = "(Full schedule: https://live.juliacon.org/agenda)"
         reply(c, m, not_now * today * "\n" * schedule)
     else
-        reply(c, m, JuliaCon.now(now = current, output=:text))
+        reply(c, m, JuliaCon.now(; now=current, output=:text))
     end
     return nothing
 end
@@ -66,7 +64,10 @@ function jc_execute(c, m, ::Val{:day}, args)
 end
 
 function help_commander(c::Client, m::Message, ::Val{:julia_con})
-    reply(c, m, """
+    return reply(
+        c,
+        m,
+        """
         How to look for information about JuliaCon 2021 with the `jc` command:
         ```
         jc help
@@ -87,11 +88,16 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         jc tomorrow America/Juneau
         jc day 2021-07-27
         ```
-        """)
+        """,
+    )
 end
 
 function jc_juliacon2021(c::Client, m::Message)
-    reply(c, m, "Welcome to JuliaCon 2021! Find more information at https://juliacon.org/2021/.")
+    reply(
+        c,
+        m,
+        "Welcome to JuliaCon 2021! Find more information at https://juliacon.org/2021/.",
+    )
     return nothing
 end
 
@@ -113,19 +119,19 @@ end
 
 function jc_today(c::Client, m::Message, zonedDT::ZonedDateTime)
     responses = jc_today(zonedDT)
-    foreach(s -> reply(c, m, s), responses)
+    return foreach(s -> reply(c, m, s), responses)
 end
 
 function jc_today(zonedDT::ZonedDateTime)
     @info "jc_today" zonedDT
-    aux = JuliaCon.today(now = zonedDT, output = :text)
+    aux = JuliaCon.today(; now=zonedDT, output=:text)
     if aux === nothing
         not_today = "There is no JuliaCon program at $(zonedDT)"
         schedule = "(Full schedule: https://live.juliacon.org/agenda)"
         return [not_today * "\n" * schedule]
     else
         strings = Vector{String}()
-        tables, legend = aux[1:end-1], aux[end]
+        tables, legend = aux[1:(end - 1)], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
         end
