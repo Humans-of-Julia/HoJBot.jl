@@ -7,7 +7,7 @@ using Crayons
 using CSV
 using DataFrames
 using Dates
-using Discord
+using Ekztazy
 using Downloads
 using ExpiringCaches
 using Formatting
