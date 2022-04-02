@@ -32,6 +32,8 @@ function commander(c::Client, m::Message, ::Val{:ig})
     catch ex
         if ex isa IgUserError
             discord_reply(c, m, ig_hey(user.username, ex.message))
+        elseif ex isa TaskFailedException && ex.task.result isa IgUserError
+            discord_reply(c, m, ig_hey(user.username, ex.task.result.message))
         else
             discord_reply(
                 c,
@@ -257,6 +259,7 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:hist}, args)
         clause = ""
     end
 
+    # when symbol is nothing, retrieve the purchase history for entire portfolio
     df = ig_hist(user.id, symbol)
     if nrow(df) > 0
         table = pretty_table(String, df; header=names(df))
@@ -269,7 +272,11 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:hist}, args)
             """,
         ))
     else
-        discord_reply(c, m, ig_hey(user.username, "no purchase history was found."))
+        msg = "no purchase history was found"
+        if symbol !== nothing
+            msg *= " for $symbol"
+        end
+        discord_reply(c, m, ig_hey(user.username, msg))
     end
     return nothing
 end
@@ -347,6 +354,23 @@ function ig_execute(c::Client, m::Message, user::User, ::Val{:view}, args)
         Total portfolio Value: $total_str
         """,
     ))
+
+    ig_check_bad_stocks(c, m, user, df)
+
+    return nothing
+end
+
+# If there's any unknown stocks, advise user to get rid of it
+function ig_check_bad_stocks(c::Client, m::Message, user::User, df::AbstractDataFrame)
+    bad_stocks = filter(r -> r.price == 0.0, df)
+    if nrow(bad_stocks) > 0
+        bad_stock_symbols = join(bad_stocks.symbol, ",")
+        discord_reply(c, m, ig_hey(user.username,
+            """
+            You have some unknown stocks in your portfolio: $bad_stock_symbols
+            Please use `sell` command to get rid of the bad positions.
+            """))
+    end
     return nothing
 end
 
@@ -575,6 +599,8 @@ function ig_buy(
     current_price::Real=ig_real_time_price(symbol),
 )
     @debug "Buying stock" user_id symbol shares
+    current_price > 0.0 ||
+        throw(IgUserError("No price is found for $symbol. Is it a valid stock symbol?"))
     pf = ig_load_portfolio(user_id)
     cost = shares * current_price
     if pf.cash >= cost
@@ -796,12 +822,17 @@ end
 # Fortunately, Yahoo also provides real-time prices, so setting offset to Day(0)
 # would return the current price.
 function ig_latest_price(symbol::AbstractString, offset::DatePeriod)
-    to_date = today() - offset
-    from_date = to_date - Day(4)   # account for weekend and holidays
-    df = ig_historical_prices(symbol, from_date, to_date)
-    if nrow(df) >= 1
-        return df[end, "Adj Close"]
-    else
+    try
+        to_date = today() - offset
+        from_date = to_date - Day(4)   # account for weekend and holidays
+        df = ig_historical_prices(symbol, from_date, to_date)
+        if nrow(df) >= 1
+            return df[end, "Adj Close"]
+        else
+            return 0.0
+        end
+    catch ex
+        @error "Unable to find price for $symbol, defaulting to zero. Exception=$ex"
         return 0.0
     end
 end
