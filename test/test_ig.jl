@@ -1,5 +1,6 @@
 using Test
 using Dates
+using Logging
 using Pretend
 using DataFrames
 
@@ -53,15 +54,22 @@ const USER_ID2 = UInt64(1)
 const USER_ID3 = UInt64(2)
 const USER_NAME = "Joe"
 
+# Test no warning was raised
+macro test_nowarning(ex)
+    return quote
+        @test_logs min_level=Logging.Warn $(esc(ex))
+    end
+end
+
 function test_ig_cases(f, name)
     @testset "$name" begin
         try
-            @test_nowarn ig_start_new_game(USER_ID)
-            @test_nowarn ig_start_new_game(USER_ID2)
+            @test_nowarning ig_start_new_game(USER_ID)
+            @test_nowarning ig_start_new_game(USER_ID2)
             f()
         finally
-            @test_nowarn ig_remove_game(USER_ID)
-            @test_nowarn ig_remove_game(USER_ID2)
+            @test_nowarning ig_remove_game(USER_ID)
+            @test_nowarning ig_remove_game(USER_ID2)
         end
     end
 end
@@ -99,23 +107,23 @@ mocked_client() = Client("hey")
     test_ig_cases("Life cycle") do
         @test ig_is_player(USER_ID) == true
         @test ig_hey(USER_NAME, "wat") isa AbstractString
-        @test_nowarn ig_affirm_player(USER_ID)
+        @test_nowarning ig_affirm_player(USER_ID)
         @test_throws IgUserError ig_affirm_non_player(USER_ID)
     end
 
     test_ig_cases("Load/save") do
         # load
-        pf = @test_nowarn ig_load_portfolio(USER_ID)
+        pf = @test_nowarning ig_load_portfolio(USER_ID)
         @test pf.cash > 0
         @test isempty(pf.holdings)
 
         # save with holdings
         push!(pf.holdings, IgHolding("AAPL", 1, today(), 100))
-        @test_nowarn ig_save_portfolio(USER_ID, pf)
-        pf = @test_nowarn ig_load_portfolio(USER_ID)
+        @test_nowarning ig_save_portfolio(USER_ID, pf)
+        pf = @test_nowarning ig_load_portfolio(USER_ID)
         @test length(pf.holdings) == 1
 
-        @test_nowarn ig_save_portfolio(USER_ID2, pf)
+        @test_nowarning ig_save_portfolio(USER_ID2, pf)
         pfs = ig_load_all_portfolios()
         @test length(pfs) >= 2   # two test pf's, plus whatever is there for others
         @test haskey(pfs, USER_ID)
@@ -125,7 +133,7 @@ mocked_client() = Client("hey")
     test_ig_cases("Buy/sell") do
         apply(ig_real_time_price => mock_ig_get_quote_100) do
             # Buy something, portfolio should be updated
-            executed_price = @test_nowarn ig_buy(USER_ID, "AAPL", 50)
+            executed_price = @test_nowarning ig_buy(USER_ID, "AAPL", 50)
             @test executed_price == 100.0
 
             # Load it again and check
@@ -139,7 +147,7 @@ mocked_client() = Client("hey")
             @test_throws IgUserError ig_sell(USER_ID, "AAPL", 70)
 
             # Partial sell
-            executed_price = @test_nowarn ig_sell(USER_ID, "AAPL", 30)
+            executed_price = @test_nowarning ig_sell(USER_ID, "AAPL", 30)
             @test executed_price == 100.0
 
             # What's left?
@@ -168,7 +176,7 @@ mocked_client() = Client("hey")
 
     test_ig_cases("Views") do
         # empty portfolio with pre-filled cash only
-        df = @test_nowarn ig_mark_to_market_portfolio(USER_ID)
+        df = @test_nowarning ig_mark_to_market_portfolio(USER_ID)
         @test nrow(df) == 1
         @test df.symbol[1] == "CASH:USD"
 
@@ -183,7 +191,7 @@ mocked_client() = Client("hey")
         @test ig_count_shares(pf, "IBM") == 100
 
         # convert to holdings data frame
-        df = @test_nowarn ig_holdings_data_frame(pf)
+        df = @test_nowarning ig_holdings_data_frame(pf)
         @test df isa AbstractDataFrame
         @test sort(propertynames(df)) ==
               sort([:symbol, :shares, :purchase_price, :purchase_date])
@@ -198,23 +206,23 @@ mocked_client() = Client("hey")
         # mark to market
         df2 = copy(df)
         apply(ig_real_time_price => mock_ig_get_quote_100) do
-            @test_nowarn ig_mark_to_market!(df2)
+            @test_nowarning ig_mark_to_market!(df2)
             @test hasproperty(df2, :current_price)
             @test hasproperty(df2, :market_value)
             @test unique(df2.current_price) == [100]
 
-            df3 = @test_nowarn ig_mark_to_market_portfolio(USER_ID)
+            df3 = @test_nowarning ig_mark_to_market_portfolio(USER_ID)
             @test df3.current_price .* df3.shares == df3.market_value
 
             # compatible column names
             @test Set(propertynames(ig_cash_entry(pf))) == Set(propertynames(df3))
 
             # translation to string
-            @test_nowarn ig_view_table(PrettyView(), df2)
+            @test_nowarning ig_view_table(PrettyView(), df2)
 
             # SimpleView requires specific format
-            @test_nowarn ig_reformat_view!(df3)
-            @test_nowarn ig_view_table(SimpleView(), df3)
+            @test_nowarning ig_reformat_view!(df3)
+            @test_nowarning ig_view_table(SimpleView(), df3)
         end
     end
 
@@ -227,13 +235,13 @@ mocked_client() = Client("hey")
             ig_real_time_price => mock_ig_get_quote_100,
             retrieve_users => mock_retrieve_users,
         ) do
-            valuations = @test_nowarn ig_value_all_portfolios()
+            valuations = @test_nowarning ig_value_all_portfolios()
             # ranking order: highest valuation is at the top
             @test valuations[1].id == USER_ID
             @test valuations[2].id == USER_ID2
 
             client = mocked_client()
-            rt = @test_nowarn ig_ranking_table(client)
+            rt = @test_nowarning ig_ranking_table(client)
             @test rt[1, :player] == "$USER_ID"
             @test rt[2, :player] == "$USER_ID2"
         end
@@ -250,29 +258,29 @@ mocked_client() = Client("hey")
             ig_real_time_price => mock_ig_get_quote_100,
             retrieve_users => mock_retrieve_users,
         ) do
-            @test_nowarn ig_execute(c, m, u, Val(Symbol("start-game")), [])
-            @test_nowarn ig_execute(c, m, u, Val(Symbol("abandon-game")), [])
-            @test_nowarn ig_execute(c, m, u, Val(Symbol("abandon-game-really")), [])
+            @test_nowarning ig_execute(c, m, u, Val(Symbol("start-game")), [])
+            @test_nowarning ig_execute(c, m, u, Val(Symbol("abandon-game")), [])
+            @test_nowarning ig_execute(c, m, u, Val(Symbol("abandon-game-really")), [])
 
-            @test_nowarn ig_execute(c, m, u, Val(Symbol("start-game")), [])
-            @test_nowarn ig_execute(c, m, u, Val(:view), [])
-            @test_nowarn ig_execute(c, m, u, Val(:view), ["simple"])
-            @test_nowarn ig_execute(c, m, u, Val(:buy), ["100", "aapl"])
-            @test_nowarn ig_execute(c, m, u, Val(:sell), ["100", "aapl"])
-            @test_nowarn ig_execute(c, m, u, Val(Symbol("abandon-game-really")), [])
+            @test_nowarning ig_execute(c, m, u, Val(Symbol("start-game")), [])
+            @test_nowarning ig_execute(c, m, u, Val(:view), [])
+            @test_nowarning ig_execute(c, m, u, Val(:view), ["simple"])
+            @test_nowarning ig_execute(c, m, u, Val(:buy), ["100", "aapl"])
+            @test_nowarning ig_execute(c, m, u, Val(:sell), ["100", "aapl"])
+            @test_nowarning ig_execute(c, m, u, Val(Symbol("abandon-game-really")), [])
 
-            @test_nowarn ig_execute(c, m, u, Val(:quote), ["aapl"])
-            @test_nowarn ig_execute(c, m, u, Val(:chart), ["aapl"])
-            @test_nowarn ig_execute(c, m, u, Val(:chart), ["aapl", "100d"])
+            @test_nowarning ig_execute(c, m, u, Val(:quote), ["aapl"])
+            @test_nowarning ig_execute(c, m, u, Val(:chart), ["aapl"])
+            @test_nowarning ig_execute(c, m, u, Val(:chart), ["aapl", "100d"])
 
-            @test_nowarn ig_execute(c, m, u, Val(:rank), [])
-            @test_nowarn ig_execute(c, m, u, Val(:rank), ["10"])
+            @test_nowarning ig_execute(c, m, u, Val(:rank), [])
+            @test_nowarning ig_execute(c, m, u, Val(:rank), ["10"])
         end
     end
 
     @testset "Misc" begin
         apply(current_date => mock_currrent_date) do
-            r = @test_nowarn recent_date_range(Day(10))
+            r = @test_nowarning recent_date_range(Day(10))
             @test r isa Tuple{Date,Date}
             @test r[1] == Date(2021, 1, 1)
             @test r[2] == Date(2021, 1, 11)
@@ -282,12 +290,12 @@ mocked_client() = Client("hey")
     @testset "Charting" begin
         dates = collect(Date(2021, 1, 1):Day(1):Date(2021, 12, 31))
         values = collect(1:365)
-        @test_nowarn ig_chart("AAPL", dates, values)
+        @test_nowarning ig_chart("AAPL", dates, values)
     end
 
     @testset "Integration tests" begin
         from_date, to_date = Date(2021, 1, 1), Date(2021, 1, 31)
-        @test_nowarn ig_historical_prices("AAPL", from_date, to_date)
+        @test_nowarning ig_historical_prices("AAPL", from_date, to_date)
         @test_throws IgUserError ig_historical_prices("BADSYMBOL", from_date, to_date)
     end
 

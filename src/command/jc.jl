@@ -3,7 +3,7 @@ function commander(c::Client, m::Message, ::Val{:julia_con})
     args = split(command)
     @debug "parse result" command args
 
-    if length(args) == 0 || args[1] ∉ ["2021", "now", "today", "tomorrow", "day"] # next is not available yet
+    if length(args) == 0 || args[1] ∉ ["2022", "now", "today", "tomorrow", "day"] # next is not available yet
         help_commander(c, m, :julia_con)
         return nothing
     end
@@ -14,9 +14,9 @@ end
 
 jc_execute(c, m, arg::Symbol, args) = jc_execute(c, m, Val(arg), args)
 
-function jc_execute(c, m, ::Val{:jc2021}, args)
-    @info "2021 was required" m.content m.author.username m.author.discriminator
-    return jc_juliacon2021(c, m)
+function jc_execute(c, m, ::Val{:jc2022}, args)
+    @info "2022 was required" m.content m.author.username m.author.discriminator
+    return jc_juliacon2022(c, m)
 end
 
 function jc_execute(c, m, ::Val{:now}, args)
@@ -24,7 +24,7 @@ function jc_execute(c, m, ::Val{:now}, args)
 
     tz_arg = isempty(args) || !TimeZones.istimezone(args[1]) ? "UTC" : args[1]
     current = ZonedDateTime(now(), TimeZone(tz_arg))
-    # current = ZonedDateTime(Dates.DateTime("2021-07-30T21:30:00.000"), TimeZone(tz_arg))
+    # current = ZonedDateTime(Dates.DateTime("2022-07-30T21:30:00.000"), TimeZone(tz_arg))
     @info "now command" tz_arg current
 
     if isempty(JuliaCon.get_running_talks(; now=current))
@@ -68,17 +68,17 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         c,
         m,
         """
-        How to look for information about JuliaCon 2021 with the `jc` command:
+        How to look for information about JuliaCon 2022 with the `jc` command:
         ```
         jc help
-        jc 2021
+        jc 2022
         jc now
         jc today [timezone]
         jc tomorrow [timezone]
         jc day <xxxx-mm-dd>
         ```
         `help` prints this message
-        `2021` greets the users and provide a link to the official website of year 2021's edition
+        `2022` greets the users and provide a link to the official website of year 2022's edition
         `now` details the talks and events occuring right now on the different tracks
         `today`, `tomorrow`, `day` lists the talks and event of the day. [timezone] is an optional argument which need to be valid following the TimeZones.jl package
 
@@ -86,17 +86,17 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         ```
         jc today Asia/Tokyo
         jc tomorrow America/Juneau
-        jc day 2021-07-27
+        jc day 2022-07-27
         ```
         """,
     )
 end
 
-function jc_juliacon2021(c::Client, m::Message)
+function jc_juliacon2022(c::Client, m::Message)
     reply(
         c,
         m,
-        "Welcome to JuliaCon 2021! Find more information at https://juliacon.org/2021/.",
+        "Welcome to JuliaCon 2022 Find more information at https://juliacon.org/2022/.",
     )
     return nothing
 end
