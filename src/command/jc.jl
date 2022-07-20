@@ -131,6 +131,7 @@ function jc_today(zonedDT::ZonedDateTime)
         return [not_today * "\n" * schedule]
     else
         strings = Vector{String}()
+        push!(strings, "Time zone: $(timezone(zonedDT))\n")
         tables, legend = aux[1:(end - 1)], aux[end]
         for t in tables, str in split_pretty_table(t)
             push!(strings, str)
