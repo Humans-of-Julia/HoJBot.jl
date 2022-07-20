@@ -80,7 +80,9 @@ function help_commander(c::Client, m::Message, ::Val{:julia_con})
         `help` prints this message
         `2022` greets the users and provide a link to the official website of year 2022's edition
         `now` details the talks and events occuring right now on the different tracks
-        `today`, `tomorrow`, `day` lists the talks and event of the day. [timezone] is an optional argument which need to be valid following the TimeZones.jl package
+        `today`, `tomorrow`, `day` lists the talks and event of the day.
+        See https://bit.ly/3cgWqAk for valid timezone labels.
+
 
         Examples
         ```
