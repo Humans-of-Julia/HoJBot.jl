@@ -208,7 +208,7 @@ end
 function start_juliacon_updater()
     @async while true
         @info "Updating JuliaCon schedule" now()
-        JuliaCon.update_schedule()
+        JuliaCon.update_schedule(notimeout=true)
         @info "JuliaCon schedule updated" now()
         sleep(3600)  # every hour
     end
