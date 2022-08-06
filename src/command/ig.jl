@@ -875,3 +875,60 @@ function date_period(s::AbstractString)
     dct = Dict("y" => Year, "m" => Month, "d" => Day)
     return dct[m.captures[2]](num)
 end
+
+"Take a portfolio and perform a stock split. Return a new portfolio object."
+function ig_split_stock(pf::IgPortfolio, symbol::AbstractString, ratio::Real)
+    return IgPortfolio(
+        pf.cash,
+        IgHolding[h.symbol == symbol ? ig_split_stock(h, ratio) : h for h in pf.holdings]
+    )
+end
+
+"""
+Split a stock holding by the provided ratio. For example, to split each share of a
+stock to 3 shares, pass a ratio of 3. Return a new holding object.
+"""
+function ig_split_stock(holding::IgHolding, ratio::Real)
+    return IgHolding(
+        holding.symbol,
+        holding.shares * ratio,
+        holding.date,
+        holding.purchase_price / ratio,
+    )
+end
+
+"""
+Print differences between two set of holdings.
+Returns true if there's any difference between them.
+"""
+function ig_diff_holdings(h1::Vector{IgHolding}, h2::Vector{IgHolding})
+    d1 = setdiff(h1, h2)  # holdings in h1 but not in h2
+    d2 = setdiff(h2, h1)  # holdings in h2 but not in h1
+    !isempty(d1) && @info "In old portfolio but not new portfolio" d1
+    !isempty(d2) && @info "In new portfolio but not old portfolio" d2
+    return !isempty(d1) || !isempty(d2)
+end
+
+"Find all portfolios that have the specific stock"
+function ig_split_and_update_all_portfolios(symbol::AbstractString, ratio::Real)
+    @info "Split and update all portfolios" symbol ratio
+    all_pfs = ig_load_all_portfolios()
+    impacted_users = []
+    for (user_id, pf) in all_pfs
+        @info "Processing portfolio for user id $user_id"
+        updated_pf = ig_split_stock(pf, symbol, ratio)
+        was_updated = ig_diff_holdings(pf.holdings, updated_pf.holdings)
+        if was_updated
+            ig_save_portfolio(user_id, updated_pf)
+            push!(impacted_users, user_id)
+            @info "Saved portfolio for user id $user_id"
+        else
+            @info "No changes were made for user id $user_id"
+        end
+    end
+    if !isempty(impacted_users)
+        println("----------------------------")
+        println("Files updated:")
+        foreach(x -> println("$x.json"), impacted_users)
+    end
+end
