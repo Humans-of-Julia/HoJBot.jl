@@ -33,7 +33,7 @@ function start_bot(;
     # add_help!(client; help = help_message())
     warm_up_enabled() && warm_up()
     open(client)
-    start_juliacon_updater()
+    should_enable_juliacon() && start_juliacon_updater()
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
     return nothing
