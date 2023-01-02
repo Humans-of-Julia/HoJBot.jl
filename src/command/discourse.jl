@@ -112,14 +112,14 @@ function discourse_run_query(
 end
 
 function discourse_save(message_id::UInt64, r::DiscourseData)
-    @info "Saving discourse search data for message_id=$message_id"
+    @debug "Saving discourse search data for message_id=$message_id"
     path = discourse_file_path(message_id)
     write(ensurepath!(path), JSON3.write(r))
     return nothing
 end
 
 function discourse_load(message_id::UInt64)
-    @info "Loading discourse search data for message_id=$message_id"
+    @debug "Loading discourse search data for message_id=$message_id"
     path = discourse_file_path(message_id)
     bytes = read(path)
     return JSON3.read(bytes, DiscourseData)

@@ -26,8 +26,8 @@ HoJBot.mod_init()
     end
 
     @test isempty(mod_check_message("this is good")) == true
-    @test isempty(mod_check_message("this is shit")) == false
-    @test isempty(mod_check_message("this is ||shit||")) == true
-    @test isempty(mod_check_message("this is damn ||shit||")) == false
-    @test isempty(mod_check_message("this is ok ||shit")) == true
+    @test isempty(mod_check_message("this is ass")) == false
+    @test isempty(mod_check_message("this is ||ass||")) == true
+    @test isempty(mod_check_message("this is ass ||ass||")) == false
+    @test isempty(mod_check_message("this is ok ||ass")) == true
 end

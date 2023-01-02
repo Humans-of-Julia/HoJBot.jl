@@ -33,6 +33,7 @@ function start_bot(;
     # add_help!(client; help = help_message())
     warm_up_enabled() && warm_up()
     open(client)
+    should_enable_juliacon() && start_juliacon_updater()
     auto_shutdown(client, run_duration, "SHUTDOWN")
     wait(client)
     return nothing
@@ -201,5 +202,14 @@ function warm_up()
             # ig_remove_game(dummy_user_id)
         end
         @info "Completed warm up in $elapsed seconds"
+    end
+end
+
+function start_juliacon_updater()
+    @async while true
+        @info "Updating JuliaCon schedule" now()
+        JuliaCon.update_schedule(notimeout=true)
+        @info "JuliaCon schedule updated" now()
+        sleep(3600)  # every hour
     end
 end

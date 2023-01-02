@@ -246,3 +246,7 @@ end
 
 # TODO move to constants.jl later
 const Optional{T} = Union{T,Nothing}
+
+function should_enable_juliacon()
+    return get(ENV, "ENABLE_JULIACON", "0") == "1"
+end
